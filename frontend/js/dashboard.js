@@ -291,55 +291,72 @@ children: `<div class="children-page">
   content.innerHTML = pages.home;
 
   /* ======================
-     MENU NAVIGATION
-  ====================== */
-  menuItems.forEach(item => {
-    item.addEventListener("click", async () => {
-      menuItems.forEach(i => i.classList.remove("active"));
-      item.classList.add("active");
+   MENU NAVIGATION
+====================== */
+menuItems.forEach(item => {
+  item.addEventListener("click", async () => {
+    menuItems.forEach(i => i.classList.remove("active"));
+    item.classList.add("active");
 
-      const pageKey = item.dataset.page;
-      if (!pages[pageKey]) return;
+    const pageKey = item.dataset.page;
+    if (!pages[pageKey]) return;
 
-      content.innerHTML = pages[pageKey];
-
-      // 🔥 INIT MODULES
-      if (pageKey === "children") {
-  const module = await import("./children.module.js");
-  module.initChildrenModule();
-}
-
-      if (pageKey === "medicines") {
-        const module = await import("./medicine.module.js");
-        module.initMedicineModule();
+    // ✅ Old page cleanup
+    if (window.__destroyCurrentPage) {
+      try {
+        window.__destroyCurrentPage();
+      } catch (e) {
+        console.warn(e);
       }
+      window.__destroyCurrentPage = null;
+    }
 
-      if (pageKey === "checklist") {
-        const module = await import("./daily_checklist.module.js");
-        module.initDailyChecklist();
+    content.innerHTML = pages[pageKey];
+
+    // 🔥 INIT MODULES
+    if (pageKey === "children") {
+      const module = await import("./children.module.js");
+      module.initChildrenModule();
+    }
+
+    if (pageKey === "medicines") {
+      const module = await import("./medicine.module.js");
+      module.initMedicineModule();
+    }
+
+    if (pageKey === "checklist") {
+      const module = await import("./daily_checklist.module.js");
+      module.initDailyChecklist();
+
+      if (typeof module.destroyDailyChecklist === "function") {
+        window.__destroyCurrentPage = module.destroyDailyChecklist;
       }
+    }
 
-      if (pageKey === "addanalysis") {
-        const module = await import("./addanalysis.module.js");
-        module.initAddAnalysisModule();
+    if (pageKey === "addanalysis") {
+      const module = await import("./addanalysis.module.js");
+      module.initAddAnalysisModule();
+    }
+
+    if (pageKey === "results") {
+      const module = await import("./results.module.js");
+      module.initResultsModule();
+
+      if (typeof module.destroyResultsModule === "function") {
+        window.__destroyCurrentPage = module.destroyResultsModule;
       }
+    }
 
-      if (pageKey === "results") {
-        const module = await import("./results.module.js");
-        module.initResultsModule();
-      }
-
-      if (pageKey === "knowledgebase") {
-        const module = await import("./knowledgebase.module.js");
-        module.initKnowledgeBaseModule();
+    if (pageKey === "knowledgebase") {
+      const module = await import("./knowledgebase.module.js");
+      module.initKnowledgeBaseModule();
 
       if (typeof module.destroyKnowledgeBaseModule === "function") {
         window.__destroyCurrentPage = module.destroyKnowledgeBaseModule;
       }
-      }
-    });
+    }
   });
-
+});
   /* ======================
      LOGOUT
   ====================== */

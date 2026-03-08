@@ -9,7 +9,7 @@ import {
 
 let currentCategory = "";
 let currentArticles = [];
-let listenersAttached = false;
+let rootClickHandler = null;
 
 export function initKnowledgeBaseModule() {
   const homeView = document.getElementById("kbHomeView");
@@ -18,44 +18,61 @@ export function initKnowledgeBaseModule() {
 
   if (!homeView || !listView || !detailView) return;
 
-  if (!listenersAttached) {
-    attachStaticListeners();
-    listenersAttached = true;
-  }
-
+  attachDelegatedListeners();
   showHomeView();
 }
 
 export function destroyKnowledgeBaseModule() {
+  const page = document.querySelector(".knowledge-page");
+  if (page && rootClickHandler) {
+    page.removeEventListener("click", rootClickHandler);
+  }
+
+  rootClickHandler = null;
   currentCategory = "";
   currentArticles = [];
-  listenersAttached = false;
 }
 
-function attachStaticListeners() {
-  document.querySelectorAll(".kb-category-card").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const category = btn.dataset.category;
-      if (!category) return;
+function attachDelegatedListeners() {
+  const page = document.querySelector(".knowledge-page");
+  if (!page) return;
 
+  if (rootClickHandler) {
+    page.removeEventListener("click", rootClickHandler);
+  }
+
+  rootClickHandler = async (e) => {
+    const categoryBtn = e.target.closest(".kb-category-card");
+    const articleBtn = e.target.closest(".kb-article-card");
+    const backHomeBtn = e.target.closest("#kbBackToHome");
+    const backListBtn = e.target.closest("#kbBackToList");
+
+    if (categoryBtn) {
+      const category = categoryBtn.dataset.category;
+      if (!category) return;
       currentCategory = category;
       await loadArticlesByCategory(category);
-    });
-  });
+      return;
+    }
 
-  const backToHome = document.getElementById("kbBackToHome");
-  if (backToHome) {
-    backToHome.addEventListener("click", () => {
+    if (articleBtn) {
+      const articleId = articleBtn.dataset.id;
+      const article = currentArticles.find((a) => a.id === articleId);
+      if (article) renderArticleDetail(article);
+      return;
+    }
+
+    if (backHomeBtn) {
       showHomeView();
-    });
-  }
+      return;
+    }
 
-  const backToList = document.getElementById("kbBackToList");
-  if (backToList) {
-    backToList.addEventListener("click", () => {
+    if (backListBtn) {
       showListView();
-    });
-  }
+    }
+  };
+
+  page.addEventListener("click", rootClickHandler);
 }
 
 async function loadArticlesByCategory(category) {
@@ -65,24 +82,34 @@ async function loadArticlesByCategory(category) {
   if (!listContainer || !title) return;
 
   listContainer.innerHTML = `<p>Loading...</p>`;
-
-  const q = query(
-    collection(db, "knowledge_base"),
-    where("category", "==", category),
-    where("status", "==", "published"),
-    orderBy("order", "asc")
-  );
-
-  const snap = await getDocs(q);
-
-  currentArticles = snap.docs.map((docSnap) => ({
-    id: docSnap.id,
-    ...docSnap.data()
-  }));
-
   title.textContent = getCategoryTitle(category);
-  renderArticlesList();
-  showListView();
+
+  try {
+    const q = query(
+      collection(db, "knowledge_base"),
+      where("category", "==", category),
+      where("status", "==", "published"),
+      orderBy("order", "asc")
+    );
+
+    const snap = await getDocs(q);
+
+    currentArticles = snap.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data()
+    }));
+
+    renderArticlesList();
+    showListView();
+  } catch (error) {
+    console.error("Knowledge Base load error:", error);
+    listContainer.innerHTML = `
+      <p class="kb-empty">
+        Could not load articles. Check Firestore data or indexes.
+      </p>
+    `;
+    showListView();
+  }
 }
 
 function renderArticlesList() {
@@ -90,24 +117,18 @@ function renderArticlesList() {
   if (!listContainer) return;
 
   if (currentArticles.length === 0) {
-    listContainer.innerHTML = `<p class="kb-empty">No articles found in this category yet.</p>`;
+    listContainer.innerHTML = `
+      <p class="kb-empty">No articles found in this category yet.</p>
+    `;
     return;
   }
 
   listContainer.innerHTML = currentArticles.map((article) => `
-    <button class="kb-article-card" data-id="${article.id}">
+    <button class="kb-article-card" data-id="${article.id}" type="button">
       <h4>${escapeHtml(article.title)}</h4>
       <p>${escapeHtml(article.summary || "")}</p>
     </button>
   `).join("");
-
-  document.querySelectorAll(".kb-article-card").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const articleId = btn.dataset.id;
-      const article = currentArticles.find(a => a.id === articleId);
-      if (article) renderArticleDetail(article);
-    });
-  });
 }
 
 function renderArticleDetail(article) {
@@ -168,7 +189,7 @@ function formatContent(text) {
   return escapeHtml(text)
     .split("\n")
     .filter(Boolean)
-    .map(line => `<p>${line}</p>`)
+    .map((line) => `<p>${line}</p>`)
     .join("");
 }
 
