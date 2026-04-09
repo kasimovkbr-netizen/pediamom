@@ -3,24 +3,19 @@ import { supabase } from "./supabase.js";
 import { toast } from "./toast.js";
 
 let currentUser = null;
+let settingsInitialized = false;
 
 export async function initSettingsModule() {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-
   if (!session) {
     window.location.href = "../auth/login.html";
     return;
   }
 
   currentUser = session.user;
-
-  supabase.auth.onAuthStateChange((event, sess) => {
-    if (event === "SIGNED_OUT" || !sess) {
-      window.location.href = "../auth/login.html";
-    }
-  });
+  settingsInitialized = false; // reset on each init
 
   await loadUserProfile();
   setupEventListeners();
@@ -33,7 +28,7 @@ async function loadUserProfile() {
   try {
     const { data, error } = await supabase
       .from("users")
-      .select("display_name, telegram_chat_id")
+      .select("display_name, telegram_chat_id, credits, free_credits_used")
       .eq("id", currentUser.id)
       .single();
 
@@ -45,10 +40,76 @@ async function loadUserProfile() {
     if (nameInput) nameInput.value = data?.display_name || "";
     if (telegramInput) telegramInput.value = data?.telegram_chat_id || "";
 
+    // Show credits
+    const creditsEl = document.getElementById("settingsCredits");
+    if (creditsEl && data) {
+      creditsEl.textContent = `🪙 ${data.credits || 0} kredit`;
+    }
+
     if (error) console.error("loadUserProfile error:", error);
+
+    // Load user_settings
+    await loadUserSettings();
+    // Load credit history
+    await loadCreditHistory();
   } catch (e) {
     console.error("loadUserProfile error:", e);
   }
+}
+
+async function loadUserSettings() {
+  if (!currentUser) return;
+  const { data } = await supabase
+    .from("user_settings")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .single();
+
+  if (data) {
+    const darkToggle = document.getElementById("darkModeToggle");
+    const notifToggle = document.getElementById("notificationsToggle");
+    if (darkToggle) darkToggle.checked = data.dark_mode;
+    if (notifToggle) notifToggle.checked = data.notifications_enabled;
+  }
+}
+
+async function saveUserSettings(key, value) {
+  if (!currentUser) return;
+  await supabase.from("user_settings").upsert(
+    {
+      user_id: currentUser.id,
+      [key]: value,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+}
+
+async function loadCreditHistory() {
+  const el = document.getElementById("creditHistoryList");
+  if (!el || !currentUser) return;
+  const { data } = await supabase
+    .from("credit_transactions")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (!data?.length) {
+    el.innerHTML = `<div style="color:#94a3b8;font-size:13px;padding:8px 0;">Tranzaksiya tarixi yo'q</div>`;
+    return;
+  }
+  el.innerHTML = data
+    .map(
+      (t) => `
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;">
+      <span style="color:#475569;">${t.description || t.type}</span>
+      <span style="font-weight:700;color:${t.amount > 0 ? "#166534" : "#991b1b"};">
+        ${t.amount > 0 ? "+" : ""}${t.amount} kredit
+      </span>
+    </div>
+  `,
+    )
+    .join("");
 }
 
 export async function loadTelegramChatId() {
@@ -155,13 +216,16 @@ function showMessage(text, type = "success") {
 }
 
 function setupEventListeners() {
-  // Save profile (display_name)
+  if (settingsInitialized) return;
+  settingsInitialized = true;
+
+  // Save profile
   const saveProfileBtn = document.getElementById("saveProfileBtn");
   if (saveProfileBtn) {
-    saveProfileBtn.addEventListener("click", async () => {
+    saveProfileBtn.onclick = async () => {
       const name = document.getElementById("settingsDisplayName")?.value.trim();
       if (!name) {
-        showMessage("Please enter a display name", "error");
+        showMessage("Ism kiritilmadi", "error");
         return;
       }
       try {
@@ -169,82 +233,77 @@ function setupEventListeners() {
           .from("users")
           .update({ display_name: name })
           .eq("id", currentUser.id);
-
         if (error) throw error;
-        showMessage("Profile saved successfully!");
+        showMessage("Profil saqlandi!");
       } catch (e) {
-        showMessage("Failed to save profile", "error");
+        showMessage("Xatolik: " + e.message, "error");
       }
-    });
+    };
   }
 
-  // Change password — no re-auth needed with Supabase
+  // Change password
   const changePasswordBtn = document.getElementById("changePasswordBtn");
   if (changePasswordBtn) {
-    changePasswordBtn.addEventListener("click", async () => {
+    changePasswordBtn.onclick = async () => {
       const newPw = document.getElementById("newPassword")?.value;
       const confirmPw = document.getElementById("confirmPassword")?.value;
       const errorEl = document.getElementById("passwordError");
-
       if (!newPw || !confirmPw) {
         if (errorEl) {
-          errorEl.textContent = "Please fill all password fields";
+          errorEl.textContent = "Barcha maydonlarni to'ldiring";
           errorEl.style.display = "block";
         }
         return;
       }
-      if (!validatePasswordMatch(newPw, confirmPw)) {
+      if (newPw !== confirmPw) {
         if (errorEl) {
-          errorEl.textContent = "New passwords do not match";
+          errorEl.textContent = "Parollar mos kelmadi";
           errorEl.style.display = "block";
         }
         return;
       }
       if (errorEl) errorEl.style.display = "none";
-
       try {
         const { error } = await supabase.auth.updateUser({ password: newPw });
         if (error) throw error;
-        showMessage("Password changed successfully!");
-        const newPwEl = document.getElementById("newPassword");
-        const confirmPwEl = document.getElementById("confirmPassword");
-        const currentPwEl = document.getElementById("currentPassword");
-        if (newPwEl) newPwEl.value = "";
-        if (confirmPwEl) confirmPwEl.value = "";
-        if (currentPwEl) currentPwEl.value = "";
+        showMessage("Parol o'zgartirildi!");
+        ["newPassword", "confirmPassword", "currentPassword"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
       } catch (e) {
         if (errorEl) {
-          errorEl.textContent = e.message || "Failed to change password";
+          errorEl.textContent = e.message;
           errorEl.style.display = "block";
         }
       }
-    });
+    };
   }
 
-  // Dark mode toggle
+  // Dark mode
   const darkToggle = document.getElementById("darkModeToggle");
   if (darkToggle) {
-    darkToggle.addEventListener("change", () =>
-      toggleDarkMode(darkToggle.checked),
-    );
+    darkToggle.onchange = () => {
+      toggleDarkMode(darkToggle.checked);
+      saveUserSettings("dark_mode", darkToggle.checked);
+    };
   }
 
-  // Notifications toggle
+  // Notifications
   const notifToggle = document.getElementById("notificationsToggle");
   if (notifToggle) {
-    notifToggle.addEventListener("change", () => {
+    notifToggle.onchange = () => {
       localStorage.setItem(
         "pediamom_notifications",
         notifToggle.checked ? "1" : "0",
       );
-    });
+      saveUserSettings("notifications_enabled", notifToggle.checked);
+    };
   }
 
   // Delete account
   const deleteBtn = document.getElementById("deleteAccountBtn");
-  if (deleteBtn) {
-    deleteBtn.addEventListener("click", showDeleteConfirmDialog);
-  }
+  if (deleteBtn) deleteBtn.onclick = showDeleteConfirmDialog;
 }
 
 export function showDeleteConfirmDialog() {

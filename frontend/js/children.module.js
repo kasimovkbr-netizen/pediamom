@@ -1,6 +1,5 @@
-// Requirements: 5.4, 6.1–6.7
+// children.module.js — Professional, bug-free
 import { supabase } from "./supabase.js";
-
 import { computeScheduledDate } from "./vaccination_utils.js";
 import { UZ_VACCINE_SCHEDULE } from "./uz_vaccine_schedule.js";
 import { generateVaccinationRecords } from "./vaccination.module.js";
@@ -8,48 +7,46 @@ import { generateVaccinationRecords } from "./vaccination.module.js";
 let userId = null;
 let editId = null;
 let channel = null;
+let initialized = false;
 
-// Global confirm modal state
-let pendingDeleteChildId = null;
+// ─── Init / Destroy ───────────────────────────────────────────────────────────
 
 export async function initChildrenModule() {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-
   if (!session) {
     window.location.href = "../auth/login.html";
     return;
   }
 
   userId = session.user.id;
+  initialized = false; // reset so setupUI runs fresh
 
-  supabase.auth.onAuthStateChange((event, sess) => {
-    if (event === "SIGNED_OUT" || !sess) {
-      window.location.href = "../auth/login.html";
-    }
-  });
-
-  setupUI();
   await loadChildren();
+  setupUI();
   subscribeRealtime();
 }
 
-export function destroyModule() {
+export function destroyChildrenModule() {
   if (channel) {
     supabase.removeChannel(channel);
     channel = null;
   }
+  userId = null;
+  editId = null;
+  initialized = false;
 }
 
-/* ======================
-   REALTIME SUBSCRIPTION
-====================== */
-function subscribeRealtime() {
-  if (!userId) return;
+// ─── Realtime ─────────────────────────────────────────────────────────────────
 
+function subscribeRealtime() {
+  if (channel) {
+    supabase.removeChannel(channel);
+    channel = null;
+  }
   channel = supabase
-    .channel("children-changes")
+    .channel("children-" + userId)
     .on(
       "postgres_changes",
       {
@@ -58,74 +55,98 @@ function subscribeRealtime() {
         table: "children",
         filter: `parent_id=eq.${userId}`,
       },
-      () => {
-        loadChildren();
-      },
+      () => loadChildren(),
     )
     .subscribe();
 }
 
-/* ======================
-   LOAD CHILDREN
-====================== */
+// ─── Load ─────────────────────────────────────────────────────────────────────
+
 async function loadChildren() {
   const list = document.getElementById("childList");
   if (!list || !userId) return;
 
-  list.innerHTML = "";
-
   const { data, error } = await supabase
     .from("children")
     .select("*")
-    .eq("parent_id", userId);
+    .eq("parent_id", userId)
+    .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("[children] loadChildren error:", error);
+    console.error("[children] load:", error);
     return;
   }
 
-  (data || []).forEach((c) => {
+  list.innerHTML = "";
+
+  if (!data?.length) {
+    list.innerHTML = `<li class="child-empty">
+      <div style="text-align:center;padding:32px;color:#94a3b8;">
+        <div style="font-size:48px;margin-bottom:12px;">👶</div>
+        <div style="font-size:15px;font-weight:600;">Hali bola qo'shilmagan</div>
+        <div style="font-size:13px;margin-top:4px;">Quyidagi tugmani bosib bola qo'shing</div>
+      </div>
+    </li>`;
+    return;
+  }
+
+  data.forEach((c) => {
     const li = document.createElement("li");
     li.className = "child-card";
 
     const ageLabel =
-      c.age_unit === "months"
-        ? `${Number(c.age ?? 0)} mo`
-        : `${Number(c.age ?? 0)} yrs`;
+      c.age_unit === "months" ? `${c.age ?? 0} oy` : `${c.age ?? 0} yosh`;
+
+    const genderIcon =
+      c.gender === "male" ? "👦" : c.gender === "female" ? "👧" : "👶";
+    const birthLabel = c.birth_date
+      ? `<span class="child-birth">📅 ${c.birth_date}</span>`
+      : "";
 
     li.innerHTML = `
       <div class="child-info">
-        <span class="child-name">${escapeHtml(c.name ?? "")}</span>
-        <span class="divider">|</span>
-        <span class="child-age">${ageLabel}</span>
-        <span class="divider">|</span>
-        <span class="gender">${escapeHtml(c.gender ?? "")}</span>
+        <span class="child-avatar">${genderIcon}</span>
+        <div class="child-details">
+          <span class="child-name">${esc(c.name)}</span>
+          <div class="child-meta">
+            <span>${ageLabel}</span>
+            <span class="divider">·</span>
+            <span>${esc(c.gender || "—")}</span>
+            ${c.birth_date ? `<span class="divider">·</span>${birthLabel}` : ""}
+          </div>
+        </div>
       </div>
-
       <div class="child-actions">
-        <button class="editBtn" data-id="${c.id}">Edit</button>
-        <button class="deleteBtn" data-id="${c.id}">Delete</button>
+        <button class="editBtn" data-id="${c.id}">✏️ Tahrir</button>
+        <button class="deleteBtn" data-id="${c.id}">🗑️ O'chirish</button>
       </div>
     `;
 
-    li.querySelector(".editBtn").onclick = () => openModal(c, c.id);
-    li.querySelector(".deleteBtn").onclick = () =>
-      openDeleteConfirm(c.id, c?.name);
-
+    li.querySelector(".editBtn").onclick = () => openModal(c);
+    li.querySelector(".deleteBtn").onclick = () => confirmDelete(c.id, c.name);
     list.appendChild(li);
   });
 }
 
-/* ======================
-   UI LOGIC
-====================== */
-function setupUI() {
-  const addChildBtn = document.getElementById("addChildBtn");
-  const closeChildModal = document.getElementById("closeChildModal");
-  const childForm = document.getElementById("childForm");
+// ─── Setup UI (runs once per init) ───────────────────────────────────────────
 
-  if (addChildBtn) addChildBtn.onclick = () => openModal();
-  if (closeChildModal) closeChildModal.onclick = () => closeModal();
+function setupUI() {
+  if (initialized) return;
+  initialized = true;
+
+  // Add button
+  const addBtn = document.getElementById("addChildBtn");
+  if (addBtn) {
+    addBtn.onclick = null; // clear previous
+    addBtn.onclick = () => openModal(null);
+  }
+
+  // Close modal
+  const closeBtn = document.getElementById("closeChildModal");
+  if (closeBtn) {
+    closeBtn.onclick = null;
+    closeBtn.onclick = closeModal;
+  }
 
   // Age unit toggle
   const ageUnitYears = document.getElementById("ageUnitYears");
@@ -133,239 +154,230 @@ function setupUI() {
   const ageUnitInput = document.getElementById("ageUnit");
   const ageInput = document.getElementById("age");
 
-  if (ageUnitYears && ageUnitMonths) {
+  if (ageUnitYears) {
     ageUnitYears.onclick = () => {
       ageUnitYears.classList.add("active");
-      ageUnitMonths.classList.remove("active");
+      ageUnitMonths?.classList.remove("active");
       if (ageUnitInput) ageUnitInput.value = "years";
-      if (ageInput) ageInput.placeholder = "Age (years)";
+      if (ageInput) ageInput.placeholder = "Yosh (yil)";
     };
+  }
+  if (ageUnitMonths) {
     ageUnitMonths.onclick = () => {
       ageUnitMonths.classList.add("active");
-      ageUnitYears.classList.remove("active");
+      ageUnitYears?.classList.remove("active");
       if (ageUnitInput) ageUnitInput.value = "months";
-      if (ageInput) ageInput.placeholder = "Age (months)";
+      if (ageInput) ageInput.placeholder = "Yosh (oy)";
     };
   }
 
-  if (childForm) {
-    childForm.onsubmit = async (e) => {
-      e.preventDefault();
-
-      const name = document.getElementById("childName")?.value.trim();
-      const age = Number(document.getElementById("age")?.value);
-      const gender = document.getElementById("gender")?.value;
-      const age_unit = document.getElementById("ageUnit")?.value || "years";
-      const birth_date = document.getElementById("birthDate")?.value || null;
-
-      if (!name || !age || !gender) return;
-
-      const data = {
-        name,
-        age,
-        age_unit,
-        gender,
-        parent_id: userId,
-      };
-
-      if (birth_date) data.birth_date = birth_date;
-
-      if (editId) {
-        // Fetch old birth_date before updating
-        const { data: oldData } = await supabase
-          .from("children")
-          .select("birth_date")
-          .eq("id", editId)
-          .single();
-
-        const oldBirthDate = oldData?.birth_date || null;
-
-        const { error } = await supabase
-          .from("children")
-          .update(data)
-          .eq("id", editId);
-
-        if (error) {
-          console.error("[children] update error:", error);
-          return;
-        }
-
-        // Recalculate pending vaccination records if birth_date changed (Req 5.3)
-        if (birth_date && birth_date !== oldBirthDate) {
-          await recalculatePendingRecords(editId, birth_date);
-        }
-      } else {
-        const { data: inserted, error } = await supabase
-          .from("children")
-          .insert(data)
-          .select()
-          .single();
-
-        if (error) {
-          console.error("[children] insert error:", error);
-          return;
-        }
-
-        if (birth_date && inserted?.id) {
-          try {
-            await generateVaccinationRecords(inserted.id, userId, birth_date);
-          } catch (err) {
-            console.error("generateVaccinationRecords error:", err);
-          }
-        }
-      }
-
-      closeModal();
-      loadChildren();
-    };
+  // Form submit — use onsubmit (not addEventListener) to prevent duplicates
+  const form = document.getElementById("childForm");
+  if (form) {
+    form.onsubmit = handleFormSubmit;
   }
 
-  wireGlobalConfirmModal();
+  // Confirm modal
+  const yesBtn = document.getElementById("confirmYes");
+  const noBtn = document.getElementById("confirmNo");
+  if (yesBtn) yesBtn.onclick = handleConfirmYes;
+  if (noBtn) noBtn.onclick = handleConfirmNo;
 }
 
-/* ======================
-   MODAL HELPERS (ADD/EDIT)
-====================== */
-function openModal(child = null, id = null) {
-  editId = id;
+// ─── Form Submit ──────────────────────────────────────────────────────────────
 
-  const modal = document.getElementById("childModal");
-  const form = document.getElementById("childForm");
-  if (!modal || !form) return;
+async function handleFormSubmit(e) {
+  e.preventDefault();
 
-  modal.classList.remove("hidden");
-  const title = document.getElementById("childModalTitle");
-  if (title) title.textContent = id ? "Edit Child" : "Add Child";
+  const submitBtn = document.querySelector("#childForm button[type='submit']");
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "⏳ Saqlanmoqda...";
+  }
 
-  const nameInput = document.getElementById("childName");
-  const ageInput = document.getElementById("age");
-  const genderInput = document.getElementById("gender");
-  const birthDateInput = document.getElementById("birthDate");
+  try {
+    const name = document.getElementById("childName")?.value.trim();
+    const age = Number(document.getElementById("age")?.value);
+    const gender = document.getElementById("gender")?.value;
+    const age_unit = document.getElementById("ageUnit")?.value || "years";
+    const birth_date = document.getElementById("birthDate")?.value || null;
 
-  if (nameInput) nameInput.value = child?.name || "";
-  if (ageInput) ageInput.value = child?.age || "";
-  if (genderInput) genderInput.value = child?.gender || "";
-  if (birthDateInput) birthDateInput.value = child?.birth_date || "";
+    if (!name) {
+      showFormError("Ism kiritilmadi");
+      return;
+    }
+    if (!age || age <= 0) {
+      showFormError("Yosh kiritilmadi");
+      return;
+    }
+    if (!gender) {
+      showFormError("Jins tanlanmadi");
+      return;
+    }
 
-  // Restore age unit toggle
-  const savedUnit = child?.age_unit || "years";
-  const ageUnitInput = document.getElementById("ageUnit");
-  const ageUnitYears = document.getElementById("ageUnitYears");
-  const ageUnitMonths = document.getElementById("ageUnitMonths");
-  if (ageUnitInput) ageUnitInput.value = savedUnit;
-  if (ageUnitYears && ageUnitMonths) {
-    if (savedUnit === "months") {
-      ageUnitMonths.classList.add("active");
-      ageUnitYears.classList.remove("active");
+    const payload = { name, age, age_unit, gender, parent_id: userId };
+    if (birth_date) payload.birth_date = birth_date;
+
+    if (editId) {
+      // Edit mode
+      const { data: old } = await supabase
+        .from("children")
+        .select("birth_date")
+        .eq("id", editId)
+        .single();
+
+      const { error } = await supabase
+        .from("children")
+        .update(payload)
+        .eq("id", editId);
+      if (error) throw error;
+
+      if (birth_date && birth_date !== old?.birth_date) {
+        await recalculatePendingRecords(editId, birth_date);
+      }
     } else {
-      ageUnitYears.classList.add("active");
-      ageUnitMonths.classList.remove("active");
+      // Add mode
+      const { data: inserted, error } = await supabase
+        .from("children")
+        .insert(payload)
+        .select()
+        .single();
+      if (error) throw error;
+
+      if (birth_date && inserted?.id) {
+        await generateVaccinationRecords(inserted.id, userId, birth_date).catch(
+          (err) => console.error("generateVaccinationRecords:", err),
+        );
+      }
+    }
+
+    closeModal();
+    await loadChildren();
+  } catch (err) {
+    console.error("[children] submit:", err);
+    showFormError("Xatolik: " + err.message);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Saqlash";
     }
   }
+}
+
+function showFormError(msg) {
+  let el = document.getElementById("childFormError");
+  if (!el) {
+    el = document.createElement("p");
+    el.id = "childFormError";
+    el.style.cssText = "color:#ef4444;font-size:13px;margin:4px 0;";
+    document.getElementById("childForm")?.prepend(el);
+  }
+  el.textContent = msg;
+  setTimeout(() => {
+    el.textContent = "";
+  }, 3000);
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+function openModal(child = null) {
+  editId = child?.id || null;
+
+  const modal = document.getElementById("childModal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+
+  const title = document.getElementById("childModalTitle");
+  if (title) title.textContent = editId ? "Bolani tahrirlash" : "Bola qo'shish";
+
+  document.getElementById("childName").value = child?.name || "";
+  document.getElementById("age").value = child?.age || "";
+  document.getElementById("gender").value = child?.gender || "";
+  document.getElementById("birthDate").value = child?.birth_date || "";
+
+  const unit = child?.age_unit || "years";
+  document.getElementById("ageUnit").value = unit;
+  document
+    .getElementById("ageUnitYears")
+    ?.classList.toggle("active", unit === "years");
+  document
+    .getElementById("ageUnitMonths")
+    ?.classList.toggle("active", unit === "months");
+
+  // Clear error
+  const errEl = document.getElementById("childFormError");
+  if (errEl) errEl.textContent = "";
+
+  document.getElementById("childName")?.focus();
 }
 
 function closeModal() {
   editId = null;
-  const modal = document.getElementById("childModal");
-  if (modal) modal.classList.add("hidden");
+  document.getElementById("childModal")?.classList.add("hidden");
 }
 
-/* ======================
-   DELETE via GLOBAL confirmModal
-====================== */
-function openDeleteConfirm(childId, childName = "") {
-  pendingDeleteChildId = childId;
+// ─── Delete Confirm ───────────────────────────────────────────────────────────
 
-  const confirmModal = document.getElementById("confirmModal");
-  const confirmText = document.getElementById("confirmText");
+let pendingDeleteId = null;
 
-  if (confirmText) {
-    confirmText.textContent = childName
-      ? `Delete "${childName}"? This will also remove that child's medicines.`
-      : "Are you sure you want to delete this child?";
-  }
-
-  if (confirmModal) confirmModal.classList.remove("hidden");
+function confirmDelete(id, name) {
+  pendingDeleteId = id;
+  const modal = document.getElementById("confirmModal");
+  const text = document.getElementById("confirmText");
+  if (text)
+    text.textContent = `"${name}" ni o'chirishni tasdiqlaysizmi? Barcha ma'lumotlar o'chadi.`;
+  modal?.classList.remove("hidden");
 }
 
-let confirmWired = false;
-function wireGlobalConfirmModal() {
-  if (confirmWired) return;
-  confirmWired = true;
+function handleConfirmYes() {
+  if (!pendingDeleteId) return;
+  const id = pendingDeleteId;
+  pendingDeleteId = null;
+  document.getElementById("confirmModal")?.classList.add("hidden");
 
-  const confirmModal = document.getElementById("confirmModal");
-  const yesBtn = document.getElementById("confirmYes");
-  const noBtn = document.getElementById("confirmNo");
-
-  if (!confirmModal || !yesBtn || !noBtn) return;
-
-  noBtn.onclick = () => {
-    pendingDeleteChildId = null;
-    confirmModal.classList.add("hidden");
-  };
-
-  yesBtn.onclick = async () => {
-    if (!pendingDeleteChildId) return;
-
-    const id = pendingDeleteChildId;
-    pendingDeleteChildId = null;
-
-    const { error } = await supabase.from("children").delete().eq("id", id);
-
-    if (error) {
-      console.error("[children] delete error:", error);
-    }
-
-    confirmModal.classList.add("hidden");
-    loadChildren();
-  };
+  supabase
+    .from("children")
+    .delete()
+    .eq("id", id)
+    .then(({ error }) => {
+      if (error) console.error("[children] delete:", error);
+      else loadChildren();
+    });
 }
 
-/* ======================
-   RECALCULATE PENDING VACCINATION RECORDS
-   Requirements: 5.3
-====================== */
+function handleConfirmNo() {
+  pendingDeleteId = null;
+  document.getElementById("confirmModal")?.classList.add("hidden");
+}
+
+// ─── Recalculate pending vaccination records ──────────────────────────────────
+
 async function recalculatePendingRecords(childId, newBirthDate) {
-  const { data: records, error } = await supabase
+  const { data: records } = await supabase
     .from("vaccination_records")
     .select("id, vaccine_name")
     .eq("child_id", childId)
     .eq("status", "pending");
 
-  if (error) {
-    console.error("[children] recalculatePendingRecords error:", error);
-    return;
-  }
-
-  for (const record of records || []) {
-    const vaccine = UZ_VACCINE_SCHEDULE.find(
-      (v) => v.name === record.vaccine_name,
-    );
+  for (const r of records || []) {
+    const vaccine = UZ_VACCINE_SCHEDULE.find((v) => v.name === r.vaccine_name);
     if (!vaccine) continue;
-
-    const newScheduledDate = computeScheduledDate(
-      newBirthDate,
-      vaccine.offsetDays,
-    );
-
     await supabase
       .from("vaccination_records")
       .update({
-        scheduled_date: newScheduledDate,
+        scheduled_date: computeScheduledDate(newBirthDate, vaccine.offsetDays),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", record.id);
+      .eq("id", r.id);
   }
 }
 
-/* ======================
-   Utils
-====================== */
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+// ─── Utils ────────────────────────────────────────────────────────────────────
+
+function esc(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

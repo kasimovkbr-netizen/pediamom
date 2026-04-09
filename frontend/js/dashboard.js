@@ -482,6 +482,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       <input type="email" id="settingsEmail" placeholder="your@email.com" readonly class="readonly-field" />
       <small style="color:#94a3b8;font-size:12px;">Email cannot be changed here</small>
     </div>
+    <div id="settingsCredits" style="font-size:15px;font-weight:700;color:#2563eb;margin:8px 0;"></div>
     <button id="saveProfileBtn" class="settings-save-btn">Save Profile</button>
   </div>
 
@@ -550,6 +551,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     <button id="deleteAccountBtn" class="settings-danger-btn">Delete Account</button>
   </div>
 
+  <div class="settings-section">
+    <h3>🪙 Kredit tarixi</h3>
+    <div id="creditHistoryList"></div>
+  </div>
+
   <div id="settingsMessage" class="settings-message" style="display:none;"></div>
 </div>
 `,
@@ -607,33 +613,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function checkAdminRole(uid) {
     const adminMenu = document.getElementById("adminMenu");
-    if (!adminMenu) return;
+
+    // Default: hidden until confirmed admin
+    if (adminMenu) adminMenu.classList.add("hidden");
+    window.__userRole = "user";
 
     try {
-      console.log("Current UID:", uid);
-
       const { data, error } = await supabase
         .from("users")
         .select("role")
         .eq("id", uid)
         .single();
 
-      if (error || !data) {
-        console.log("NO USER DOCUMENT IN SUPABASE");
-        adminMenu.classList.add("hidden");
-        return;
+      if (!error && data?.role === "admin") {
+        window.__userRole = "admin";
+        if (adminMenu) adminMenu.classList.remove("hidden");
       }
-
-      console.log("Role:", data.role);
-
-      if (data.role === "admin") {
-        adminMenu.classList.remove("hidden");
-      } else {
-        adminMenu.classList.add("hidden");
-      }
-    } catch (error) {
-      console.error("Role check error:", error);
-      adminMenu.classList.add("hidden");
+    } catch {
+      // keep hidden on any error
     }
   }
   /* ======================
@@ -666,6 +663,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 ====================== */
   menuItems.forEach((item) => {
     item.addEventListener("click", async () => {
+      // Don't allow clicking hidden menu items (e.g. admin for non-admins)
+      if (item.classList.contains("hidden")) return;
+
       menuItems.forEach((i) => i.classList.remove("active"));
       item.classList.add("active");
       closeSidebar(); // close sidebar on mobile after nav
@@ -741,6 +741,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       if (pageKey === "admin") {
+        // Extra security: verify admin role before loading
+        const {
+          data: { session: currentSession },
+        } = await supabase.auth.getSession();
+        if (currentSession) {
+          const { data: userRow } = await supabase
+            .from("users")
+            .select("role")
+            .eq("id", currentSession.user.id)
+            .single();
+          if (userRow?.role !== "admin") {
+            content.innerHTML = pages.home;
+            initHomePage();
+            return;
+          }
+        }
         const module = await import("./admin.module.js");
         module.initAdminModule();
       }

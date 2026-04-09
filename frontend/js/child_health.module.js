@@ -4,6 +4,17 @@
 //         child_feeding_log, child_diaper_log, milestones
 import { supabase } from "./supabase.js";
 import { toast } from "./toast.js";
+import {
+  renderSleep,
+  renderFeeding,
+  renderDiaper,
+  renderDental,
+  renderEye,
+  renderHearing,
+  renderSolidFood,
+  renderMedHistory,
+  renderCertificates,
+} from "./child_health_extra.js";
 
 let userId = null;
 let selectedChildId = null;
@@ -47,15 +58,24 @@ function renderShell() {
   page.innerHTML = `
     <div class="adm-header">
       <div class="adm-title">🏥 Bola Sog'ligi</div>
-      <div class="adm-sub">O'sish, allergiya, shifokor, belgilar, harorat</div>
+      <div class="adm-sub">O'sish, allergiya, shifokor, belgilar, harorat va boshqalar</div>
     </div>
-    <div class="adm-tabs" id="chTabs">
+    <div class="adm-tabs" id="chTabs" style="flex-wrap:wrap;">
       <button class="adm-tab active" data-tab="growth">📏 O'sish</button>
       <button class="adm-tab" data-tab="allergies">⚠️ Allergiya</button>
       <button class="adm-tab" data-tab="doctor">🏥 Shifokor</button>
       <button class="adm-tab" data-tab="symptoms">🤒 Belgilar</button>
       <button class="adm-tab" data-tab="temperature">🌡️ Harorat</button>
       <button class="adm-tab" data-tab="milestones">🎯 Bosqichlar</button>
+      <button class="adm-tab" data-tab="sleep">😴 Uyqu</button>
+      <button class="adm-tab" data-tab="feeding">🍼 Ovqatlanish</button>
+      <button class="adm-tab" data-tab="diaper">👶 Baxmal</button>
+      <button class="adm-tab" data-tab="dental">🦷 Tish</button>
+      <button class="adm-tab" data-tab="eye">👁️ Ko'z</button>
+      <button class="adm-tab" data-tab="hearing">👂 Eshitish</button>
+      <button class="adm-tab" data-tab="solid">🥣 Qo'shimcha ovqat</button>
+      <button class="adm-tab" data-tab="medhistory">💊 Dori tarixi</button>
+      <button class="adm-tab" data-tab="certificates">📜 Sertifikatlar</button>
     </div>
     <div id="chContent"></div>
   `;
@@ -96,6 +116,33 @@ async function loadTab(tab) {
       break;
     case "milestones":
       await renderMilestones(content);
+      break;
+    case "sleep":
+      await renderSleep(content);
+      break;
+    case "feeding":
+      await renderFeeding(content);
+      break;
+    case "diaper":
+      await renderDiaper(content);
+      break;
+    case "dental":
+      await renderDental(content);
+      break;
+    case "eye":
+      await renderEye(content);
+      break;
+    case "hearing":
+      await renderHearing(content);
+      break;
+    case "solid":
+      await renderSolidFood(content);
+      break;
+    case "medhistory":
+      await renderMedHistory(content);
+      break;
+    case "certificates":
+      await renderCertificates(content);
       break;
   }
 }

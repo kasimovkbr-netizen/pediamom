@@ -453,3 +453,101 @@ window.__famDel = async (table, id, btn) => {
   toast("✅ O'chirildi", "success");
   btn?.closest("tr")?.remove();
 };
+
+// ─── PREGNANCY RECORDS ────────────────────────────────────────────────────────
+export async function renderPregnancyRecords(el, userId) {
+  const { data } = await supabase
+    .from("pregnancy_records")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  el.innerHTML = `
+    <div class="adm-section">
+      <div class="adm-section-title">🤰 Homiladorlik yozuvlari</div>
+      <form id="pregForm" class="ch-form">
+        <div class="ch-form-grid">
+          <div><label>Kutilgan sana</label><input type="date" id="prDue" /></div>
+          <div><label>Oxirgi hayz</label><input type="date" id="prLast" /></div>
+          <div><label>Shifokor</label><input type="text" id="prDoctor" placeholder="Dr. Nazarova" /></div>
+          <div><label>Shifoxona</label><input type="text" id="prHospital" placeholder="1-son tug'ruqxona" /></div>
+        </div>
+        <textarea id="prNotes" placeholder="Izoh" rows="2"></textarea>
+        <button type="submit" class="adm-btn-primary">💾 Saqlash</button>
+      </form>
+      <div class="adm-table-wrap" style="margin-top:16px;">
+        <table class="adm-table">
+          <thead><tr><th>Kutilgan sana</th><th>Shifokor</th><th>Shifoxona</th><th>Holat</th><th></th></tr></thead>
+          <tbody>${(data || [])
+            .map(
+              (r) => `<tr>
+            <td>${r.due_date || "—"}</td>
+            <td>${r.doctor || "—"}</td>
+            <td>${r.hospital || "—"}</td>
+            <td><span class="adm-badge ${r.status === "active" ? "green" : "gray"}">${r.status}</span></td>
+            <td><button class="adm-btn-sm red" onclick="window.__famDel('pregnancy_records','${r.id}',this)">🗑</button></td>
+          </tr>`,
+            )
+            .join("")}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  document.getElementById("pregForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { error } = await supabase.from("pregnancy_records").insert({
+      user_id: userId,
+      due_date: document.getElementById("prDue").value || null,
+      last_period: document.getElementById("prLast").value || null,
+      doctor: document.getElementById("prDoctor").value.trim() || null,
+      hospital: document.getElementById("prHospital").value.trim() || null,
+      notes: document.getElementById("prNotes").value.trim() || null,
+    });
+    if (error) {
+      toast("Xato: " + error.message, "error");
+      return;
+    }
+    toast("✅ Saqlandi", "success");
+    await renderPregnancyRecords(el, userId);
+  });
+}
+
+// ─── SUPPORT TICKET ───────────────────────────────────────────────────────────
+export async function renderSupportTicket(el, userId) {
+  el.innerHTML = `
+    <div class="adm-section">
+      <div class="adm-section-title">🎫 Qo'llab-quvvatlash so'rovi</div>
+      <form id="ticketForm" class="ch-form">
+        <div class="ch-form-grid">
+          <div><label>Mavzu *</label><input type="text" id="tkSubject" placeholder="Muammo tavsifi" required /></div>
+          <div><label>Muhimlik</label>
+            <select id="tkPriority">
+              <option value="low">Past</option>
+              <option value="normal" selected>O'rtacha</option>
+              <option value="high">Yuqori</option>
+              <option value="urgent">Shoshilinch</option>
+            </select>
+          </div>
+        </div>
+        <textarea id="tkMessage" placeholder="Muammoni batafsil yozing..." rows="4" required></textarea>
+        <button type="submit" class="adm-btn-primary">📤 Yuborish</button>
+      </form>
+    </div>
+  `;
+  document
+    .getElementById("ticketForm")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const { error } = await supabase.from("support_tickets").insert({
+        user_id: userId,
+        subject: document.getElementById("tkSubject").value.trim(),
+        message: document.getElementById("tkMessage").value.trim(),
+        priority: document.getElementById("tkPriority").value,
+      });
+      if (error) {
+        toast("Xato: " + error.message, "error");
+        return;
+      }
+      toast("✅ So'rovingiz yuborildi! Tez orada javob beramiz.", "success");
+      document.getElementById("ticketForm").reset();
+    });
+}

@@ -193,12 +193,18 @@ const PORT = process.env.PORT || 3001;
 const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ PediaMom API server running on port ${PORT}`);
 
-  // Telegram bot — async, non-blocking
+  // Telegram bot
   if (process.env.TELEGRAM_BOT_TOKEN) {
     setImmediate(() => {
       try {
         const bot = require("./services/TelegramBot");
-        bot.startPolling();
+        if (process.env.NODE_ENV === "production") {
+          // Production: webhook rejimi — Telegram /setWebhook orqali sozlang
+          console.log("🤖 Telegram bot: webhook mode (production)");
+        } else {
+          // Development: polling rejimi
+          bot.startPolling();
+        }
       } catch (e) {
         console.error("Telegram bot error:", e.message);
       }
