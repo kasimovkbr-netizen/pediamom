@@ -22,26 +22,32 @@
       </div>
 
       <nav class="menu">
-        <a class="menu-item active" data-page="home">🏠 Dashboard</a>
-        <a class="menu-item" data-page="children">👶 Children</a>
-        <a class="menu-item" data-page="medicines">💊 Medicines</a>
-        <a class="menu-item" data-page="checklist">📋 Checklist</a>
-        <a class="menu-item" data-page="vaccination">💉 Vaccination</a>
-        <a class="menu-item" data-page="childhealth">🏥 Bola Sog'ligi</a>
-        <a class="menu-item" data-page="family">👨‍👩‍👧 Oila</a>
-        <a class="menu-item" data-page="notifications">🔔 Bildirishnomalar</a>
-        <a class="menu-item" data-page="knowledgebase">📚 Knowledge Base</a>
-        <a class="menu-item" data-page="addanalysis">🧪 Add Analysis</a>
-        <a class="menu-item" data-page="results">📈 Results</a>
-        <a class="menu-item" data-page="savedarticles">⭐ Saved Articles</a>
-        <a class="menu-item" data-page="motherhealth">👩 Mother Health</a>
-        <a class="menu-item" data-page="pregnancy">🩸 Period Tracker</a>
-        <a class="menu-item hidden" data-page="admin" id="adminMenu">👑 Admin</a>
-        <a class="menu-item" data-page="billing">💳 Billing</a>
-        <a class="menu-item" data-page="settings">⚙️ Settings</a>
+        <a class="menu-item active" data-page="home">🏠 <span data-i18n="nav_home">Dashboard</span></a>
+        <a class="menu-item" data-page="children">👶 <span data-i18n="nav_children">Children</span></a>
+        <a class="menu-item" data-page="medicines">💊 <span data-i18n="nav_medicines">Medicines</span></a>
+        <a class="menu-item" data-page="checklist">📋 <span data-i18n="nav_checklist">Checklist</span></a>
+        <a class="menu-item" data-page="vaccination">💉 <span data-i18n="nav_vaccination">Vaccination</span></a>
+        <a class="menu-item" data-page="childhealth">🏥 <span data-i18n="nav_childhealth">Child Health</span></a>
+        <a class="menu-item" data-page="family">👨‍👩‍👧 <span data-i18n="nav_family">Family</span></a>
+        <a class="menu-item" data-page="notifications">🔔 <span data-i18n="nav_notifications">Notifications</span></a>
+        <a class="menu-item" data-page="knowledgebase">📚 <span data-i18n="nav_knowledgebase">Knowledge Base</span></a>
+        <a class="menu-item" data-page="addanalysis">🧪 <span data-i18n="nav_addanalysis">Add Analysis</span></a>
+        <a class="menu-item" data-page="results">📈 <span data-i18n="nav_results">Results</span></a>
+        <a class="menu-item" data-page="savedarticles">⭐ <span data-i18n="nav_savedarticles">Saved Articles</span></a>
+        <a class="menu-item" data-page="motherhealth">👩 <span data-i18n="nav_motherhealth">Mother Health</span></a>
+        <a class="menu-item" data-page="pregnancy">🩸 <span data-i18n="nav_pregnancy">Period Tracker</span></a>
+        <a class="menu-item hidden" data-page="admin" id="adminMenu">👑 <span data-i18n="nav_admin">Admin</span></a>
+        <a class="menu-item" data-page="billing">💳 <span data-i18n="nav_billing">Billing</span></a>
+        <a class="menu-item" data-page="settings">⚙️ <span data-i18n="nav_settings">Settings</span></a>
       </nav>
 
-      <button id="logoutBtn" class="logout-btn">Logout</button>
+      <!-- Language switcher -->
+      <div class="lang-switcher">
+        <button class="lang-btn" id="langUz">🇺🇿 UZ</button>
+        <button class="lang-btn" id="langEn">🇬🇧 EN</button>
+      </div>
+
+      <button id="logoutBtn" class="logout-btn" data-i18n="logout">Logout</button>
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -74,22 +80,20 @@
     <!-- 🔴 CONFIRM DELETE MODAL (GLOBAL FOR DASHBOARD) -->
   <div id="confirmModal" class="pm-modal hidden">
     <div class="pm-modal-box">
-      <p id="confirmText">Are you sure?</p>
-
+      <p id="confirmText" data-i18n="are_you_sure">Are you sure?</p>
       <div class="pm-modal-actions">
-        <button id="confirmYes" class="pm-danger">Delete</button>
-        <button id="confirmNo">Cancel</button>
+        <button id="confirmYes" class="pm-danger" data-i18n="delete">Delete</button>
+        <button id="confirmNo" data-i18n="cancel">Cancel</button>
       </div>
     </div>
   </div>
 
-  <!-- 🚪 LOGOUT CONFIRMATION MODAL -->
   <div id="logoutModal" class="pm-modal hidden">
     <div class="pm-modal-box">
-      <p>Are you sure you want to logout?</p>
+      <p data-i18n="logout_confirm">Are you sure you want to logout?</p>
       <div class="pm-modal-actions">
-        <button id="logoutConfirmYes" class="pm-danger">Logout</button>
-        <button id="logoutConfirmNo">Cancel</button>
+        <button id="logoutConfirmYes" class="pm-danger" data-i18n="logout">Logout</button>
+        <button id="logoutConfirmNo" data-i18n="cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -105,6 +109,22 @@
     // Railway backend: https://pediamom-production.up.railway.app
   </script>
   <script type="module" src="../js/dashboard.js"></script>
+  <script type="module">
+    import { initI18n, setLang, getLang } from '../js/i18n.js';
+    initI18n();
+    document.addEventListener('DOMContentLoaded', () => {
+      const uzBtn = document.getElementById('langUz');
+      const enBtn = document.getElementById('langEn');
+      function updateBtns() {
+        const lang = getLang();
+        uzBtn?.classList.toggle('active', lang === 'uz');
+        enBtn?.classList.toggle('active', lang === 'en');
+      }
+      uzBtn?.addEventListener('click', () => { setLang('uz'); updateBtns(); });
+      enBtn?.addEventListener('click', () => { setLang('en'); updateBtns(); });
+      updateBtns();
+    });
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </body>

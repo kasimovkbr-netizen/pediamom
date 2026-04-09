@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.js";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 
 // 🔥 Flag: registratsiya jarayonida redirect ni to'xtatish uchun
 let isRegistering = false;
@@ -142,8 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
    FRIENDLY ERROR MESSAGES
 ======================= */
 function friendlyAuthError(message) {
-  if (!message) return "Something went wrong. Please try again.";
-  // Supabase error messages
+  if (!message) return t("something_went_wrong");
   if (
     message.includes("Invalid login credentials") ||
     message.includes("invalid_credentials") ||
@@ -151,32 +151,32 @@ function friendlyAuthError(message) {
     message.includes("wrong-password") ||
     message.includes("user-not-found")
   ) {
-    return "Incorrect email or password.";
+    return t("wrong_credentials");
   }
   if (
     message.includes("User already registered") ||
     message.includes("email-already-in-use")
   ) {
-    return "This email is already registered.";
+    return t("email_already_registered");
   }
   if (
     message.includes("Password should be at least") ||
     message.includes("weak-password")
   ) {
-    return "Password must be at least 6 characters.";
+    return t("password_too_short");
   }
   if (
     message.includes("Unable to validate email") ||
     message.includes("invalid-email")
   ) {
-    return "Please enter a valid email address.";
+    return t("invalid_email");
   }
   if (
     message.includes("too many requests") ||
     message.includes("too-many-requests") ||
     message.includes("over_email_send_rate_limit")
   ) {
-    return "Too many attempts. Please try again later.";
+    return t("too_many_attempts");
   }
   return message;
 }

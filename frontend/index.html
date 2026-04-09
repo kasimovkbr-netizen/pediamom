@@ -17,15 +17,21 @@
 
       <!-- TITLE -->
       <h1>PediaMom</h1>
-      <p>
+      <p data-i18n="landing_desc">
         Smart health tracking platform for parents.  
         Manage children, medical results, medicines and trends — all in one place.
       </p>
 
       <!-- ACTIONS -->
       <div class="actions">
-        <a href="./auth/login.html" class="btn primary">Login</a>
-        <a href="./auth/register.html" class="btn secondary">Register</a>
+        <a href="./auth/login.html" class="btn primary" data-i18n="login">Login</a>
+        <a href="./auth/register.html" class="btn secondary" data-i18n="register">Register</a>
+      </div>
+
+      <!-- Lang switcher on landing -->
+      <div style="margin-top:16px;display:flex;gap:8px;justify-content:center;">
+        <button onclick="setLang('uz')" style="padding:6px 14px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:13px;">🇺🇿 UZ</button>
+        <button onclick="setLang('en')" style="padding:6px 14px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:13px;">🇬🇧 EN</button>
       </div>
 
     </div>
@@ -38,6 +44,16 @@
     window.__SUPABASE_ANON_KEY__ = 'sb_publishable_E1JW4R0JEpe_V5PmCIGDVw_zMiLXtJT';
   </script>
   <script type="module" src="./js/auth.js"></script>
+  <script type="module">
+    import { initI18n, setLang, t } from './js/i18n.js';
+    window.setLang = setLang;
+    initI18n();
+    // translate landing desc
+    const desc = document.querySelector('[data-i18n="landing_desc"]');
+    if (desc) desc.textContent = t('landing_desc') !== 'landing_desc'
+      ? t('landing_desc')
+      : 'Smart health tracking platform for parents. Manage children, medical results, medicines and trends — all in one place.';
+  </script>
 
 </body>
 </html>

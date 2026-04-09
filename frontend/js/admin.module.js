@@ -1,6 +1,7 @@
 // admin.module.js — Professional Admin Panel
 import { supabase } from "./supabase.js";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 
 let allArticles = [];
 let allUsers = [];
@@ -22,7 +23,7 @@ export async function initAdminModule() {
     .single();
 
   if (userRow?.role !== "admin") {
-    toast("Ruxsat yo'q: faqat admin", "error");
+    toast(t("access_denied"), "error");
     return;
   }
 
@@ -44,19 +45,17 @@ function renderAdminShell() {
   page.innerHTML = `
     <div class="adm-header">
       <div>
-        <div class="adm-title">👑 Admin Panel</div>
-        <div class="adm-sub">PediaMom boshqaruv markazi</div>
+        <div class="adm-title">👑 ${t("admin_title")}</div>
+        <div class="adm-sub">${t("admin_subtitle")}</div>
       </div>
     </div>
-
     <div class="adm-tabs">
-      <button class="adm-tab active" data-tab="dashboard">📊 Dashboard</button>
-      <button class="adm-tab" data-tab="users">👥 Foydalanuvchilar</button>
-      <button class="adm-tab" data-tab="articles">📚 Maqolalar</button>
-      <button class="adm-tab" data-tab="credits">🪙 Kreditlar</button>
-      <button class="adm-tab" data-tab="feedback">💬 Fikrlar</button>
+      <button class="adm-tab active" data-tab="dashboard">📊 ${t("nav_home")}</button>
+      <button class="adm-tab" data-tab="users">👥 ${t("users")}</button>
+      <button class="adm-tab" data-tab="articles">📚 ${t("articles")}</button>
+      <button class="adm-tab" data-tab="credits">🪙 ${t("credits")}</button>
+      <button class="adm-tab" data-tab="feedback">💬 ${t("feedback")}</button>
     </div>
-
     <div id="adm-content"></div>
   `;
 }

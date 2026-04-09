@@ -1,6 +1,7 @@
 // Requirements: 5.8, 10.3, 10.4, 10.6
 import { supabase } from "./supabase.js";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 
 let currentUser = null;
 let settingsInitialized = false;

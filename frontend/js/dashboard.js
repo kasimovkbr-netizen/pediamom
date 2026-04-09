@@ -1,7 +1,9 @@
 // dashboard.js
 import { supabase } from "./supabase.js";
+import { t, initI18n, getLang } from "./i18n.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
+  initI18n();
   const dashboard = document.getElementById("dashboardPage");
   if (!dashboard) return;
 
@@ -15,24 +17,23 @@ document.addEventListener("DOMContentLoaded", async () => {
      PAGE TEMPLATES
   ====================== */
   const pages = {
-    home: `
+    home: () => `
       <div class="home-page">
-        <h1>Welcome back 👋</h1>
-
+        <h1>${t("welcome_back")}</h1>
         <div class="home-quick-actions">
-          <h2>Quick Actions</h2>
+          <h2>${t("quick_actions")}</h2>
           <div class="quick-actions-grid">
             <button class="quick-action-btn" data-nav="children">
-              <span class="qa-icon">➕</span> Add Child
+              <span class="qa-icon">➕</span> ${t("add_child")}
             </button>
             <button class="quick-action-btn" data-nav="medicines">
-              <span class="qa-icon">💊</span> Add Medicine
+              <span class="qa-icon">💊</span> ${t("add_medicine")}
             </button>
             <button class="quick-action-btn" data-nav="addanalysis">
-              <span class="qa-icon">🧪</span> Add Analysis
+              <span class="qa-icon">🧪</span> ${t("add_analysis")}
             </button>
             <button class="quick-action-btn" data-nav="checklist">
-              <span class="qa-icon">📋</span> Daily Checklist
+              <span class="qa-icon">📋</span> ${t("daily_checklist")}
             </button>
           </div>
         </div>
@@ -564,7 +565,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ======================
      DEFAULT PAGE
   ====================== */
-  content.innerHTML = pages.home;
+  content.innerHTML = pages.home();
   initHomePage();
 
   // Handle Stripe payment return
@@ -683,7 +684,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.__destroyCurrentPage = null;
       }
 
-      content.innerHTML = pages[pageKey];
+      content.innerHTML =
+        typeof pages[pageKey] === "function"
+          ? pages[pageKey]()
+          : pages[pageKey];
 
       // Home page stats
       if (pageKey === "home") initHomePage();
@@ -752,7 +756,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             .eq("id", currentSession.user.id)
             .single();
           if (userRow?.role !== "admin") {
-            content.innerHTML = pages.home;
+            content.innerHTML = pages.home();
             initHomePage();
             return;
           }
@@ -829,6 +833,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
   }
+
+  // Re-render home page on language change
+  window.addEventListener("langchange", () => {
+    const activeItem = dashboard.querySelector(".menu-item.active");
+    const activePage = activeItem?.dataset.page;
+    if (!activePage || activePage === "home") {
+      content.innerHTML = pages.home();
+      initHomePage();
+    }
+    // Re-apply translations to sidebar
+    import("./i18n.js").then(({ applyTranslations }) => applyTranslations());
+  });
 
   /* ======================
      LOGOUT
