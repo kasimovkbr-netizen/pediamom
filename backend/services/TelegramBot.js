@@ -536,12 +536,20 @@ async function notifyNewArticle(chatId, title, category) {
   );
 }
 
-async function notifyWater(chatId, liters, glasses) {
+async function notifyWater(
+  chatId,
+  liters,
+  glassesPerHour,
+  glassesRemaining,
+  nextTime,
+) {
   return send(
     chatId,
     `💧 <b>Suv ichish vaqti!</b>\n\n` +
-      `Bugungi maqsad: <b>${liters}L</b>\n` +
-      `Bu soatda: <b>${glasses} stakan</b>`,
+      `Bugungi maqsad: <b>${liters}L</b> (${Math.round(liters * 4)} stakan)\n` +
+      `Hozir iching: <b>${glassesPerHour} stakan</b>\n` +
+      `Qolgan: <b>${glassesRemaining} stakan</b>\n` +
+      `Keyingi eslatma: <b>${nextTime}</b>`,
   );
 }
 

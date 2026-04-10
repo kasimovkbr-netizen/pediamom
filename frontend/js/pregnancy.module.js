@@ -395,6 +395,7 @@ export async function initPregnancyModule() {
   renderHistory(cycleHistory);
   renderLegend();
   updateCalendarTitle(currentYear, currentMonth);
+  initHealthChat();
 
   // Save button
   document
@@ -509,4 +510,121 @@ function updateCalendarTitle(year, month) {
     "December",
   ];
   title.textContent = `${names[month]} ${year}`;
+}
+
+/* ══════════════════════════════════════════════
+   AI HEALTH CHAT
+══════════════════════════════════════════════ */
+
+let chatHistory = [];
+let chatFreeCount = 0;
+
+export function initHealthChat() {
+  const sendBtn = document.getElementById("chatSendBtn");
+  const input = document.getElementById("chatInput");
+  if (!sendBtn || !input) return;
+
+  sendBtn.addEventListener("click", sendChatMessage);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
+
+  // Show welcome message
+  appendChatMessage(
+    "assistant",
+    "👋 Salom! Men PediaMom AI yordamchisiman.\n\n" +
+      "Sog'liq haqida savollaringizni bering — hayz sikli, homiladorlik, bola sog'lig'i va boshqalar.\n\n" +
+      "💡 Birinchi 5 ta xabar bepul!",
+  );
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById("chatInput");
+  const message = input?.value.trim();
+  if (!message) return;
+
+  input.value = "";
+  appendChatMessage("user", message);
+
+  const sendBtn = document.getElementById("chatSendBtn");
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.textContent = "...";
+  }
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    const apiBase = window.__API_BASE_URL__ || "http://localhost:3001";
+
+    const res = await fetch(`${apiBase}/api/chat/health`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        message,
+        history: chatHistory,
+        freeCount: chatFreeCount,
+      }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      if (result.error?.code === "insufficient_credits") {
+        appendChatMessage(
+          "assistant",
+          "❌ Kreditlar tugadi. Billing bo'limidan kredit sotib oling.",
+        );
+      } else {
+        appendChatMessage(
+          "assistant",
+          "❌ Xatolik yuz berdi. Qayta urinib ko'ring.",
+        );
+      }
+      return;
+    }
+
+    chatHistory.push({ role: "user", content: message });
+    chatHistory.push({ role: "assistant", content: result.data.reply });
+    chatFreeCount++;
+
+    appendChatMessage("assistant", result.data.reply);
+
+    if (result.data.creditsUsed > 0) {
+      const badge = document.getElementById("chatCreditBadge");
+      if (badge) badge.textContent = `${result.data.creditsRemaining} kredit`;
+    }
+  } catch (err) {
+    appendChatMessage("assistant", "❌ Server bilan bog'lanib bo'lmadi.");
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Yuborish";
+    }
+    scrollChatToBottom();
+  }
+}
+
+function appendChatMessage(role, text) {
+  const messages = document.getElementById("chatMessages");
+  if (!messages) return;
+
+  const div = document.createElement("div");
+  div.className = `chat-msg chat-msg-${role}`;
+  div.innerHTML = `<div class="chat-bubble">${text.replace(/\n/g, "<br>")}</div>`;
+  messages.appendChild(div);
+  scrollChatToBottom();
+}
+
+function scrollChatToBottom() {
+  const messages = document.getElementById("chatMessages");
+  if (messages) messages.scrollTop = messages.scrollHeight;
 }

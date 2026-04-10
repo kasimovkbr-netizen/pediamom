@@ -74,14 +74,35 @@ async function runWaterReminders() {
   try {
     const { data: records } = await supabase.from("water_intake").select("*");
     for (const w of records || []) {
-      if (hour < w.start_hour || hour > w.end_hour) continue;
+      if (hour < (w.start_hour || 7) || hour > (w.end_hour || 22)) continue;
       const chatId = await getChatId(w.user_id);
       if (!chatId) continue;
-      const activeHours = w.end_hour - w.start_hour;
-      const glasses =
-        activeHours > 0 ? Math.floor((w.daily_liters * 4) / activeHours) : 0;
+
+      const activeHours = (w.end_hour || 22) - (w.start_hour || 7);
+      const totalGlasses = Math.round((w.daily_liters || 2) * 4);
+      const glassesPerHour =
+        activeHours > 0
+          ? Math.max(1, Math.round(totalGlasses / activeHours))
+          : 1;
+
+      // Calculate how many glasses should be drunk by now
+      const hoursElapsed = hour - (w.start_hour || 7);
+      const glassesSoFar = Math.round(
+        (hoursElapsed / activeHours) * totalGlasses,
+      );
+      const glassesRemaining = Math.max(0, totalGlasses - glassesSoFar);
+
+      const nextHour = hour + 1;
+      const timeStr = `${String(nextHour).padStart(2, "0")}:00`;
+
       await bot
-        .notifyWater(chatId, w.daily_liters, glasses)
+        .notifyWater(
+          chatId,
+          w.daily_liters,
+          glassesPerHour,
+          glassesRemaining,
+          timeStr,
+        )
         .catch((e) => console.error(`[Scheduler] water ${w.id}:`, e.message));
     }
   } catch (e) {

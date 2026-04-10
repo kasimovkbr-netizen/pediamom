@@ -140,6 +140,10 @@ app.use("/api", monetizationRoutes);
 // Mount AI analysis routes
 app.use("/api", aiRoutes);
 
+// Mount chat routes
+const chatRoutes = require("./routes/chat");
+app.use("/api", chatRoutes);
+
 // Delete account endpoint — backend calls supabase.auth.admin.deleteUser()
 // which cascades all related data via ON DELETE CASCADE (Requirement 10.6)
 app.delete("/api/account", async (req, res) => {

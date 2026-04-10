@@ -59,50 +59,77 @@ async function callGemini(prompt) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  // Try models in order — fallback on quota exceeded
+  const models = [
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-flash",
+  ];
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  let lastError = null;
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 600,
-        },
-      }),
-      signal: controller.signal,
-    });
+  for (const model of models) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
-    const json = await res.json();
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 600 },
+        }),
+        signal: controller.signal,
+      });
 
-    if (!res.ok) {
-      const code = json.error?.code;
-      const msg = json.error?.message || "Gemini request failed";
-      if (code === 429)
-        throw new Error(
-          "Gemini API quota exceeded. Please check your API key billing.",
-        );
-      if (code === 400) throw new Error(`Gemini bad request: ${msg}`);
-      throw new Error(msg);
+      const json = await res.json();
+
+      // Quota exceeded — try next model
+      if (
+        json.error?.code === 429 ||
+        json.error?.status === "RESOURCE_EXHAUSTED"
+      ) {
+        console.warn(`[AI] ${model} quota exceeded, trying next...`);
+        lastError = new Error(`${model} quota exceeded`);
+        continue;
+      }
+
+      if (!res.ok) {
+        lastError = new Error(json.error?.message || `${model} failed`);
+        continue;
+      }
+
+      const parts = json.candidates?.[0]?.content?.parts || [];
+      const text =
+        parts.find((p) => p.text && !p.thought)?.text ||
+        parts.find((p) => p.text)?.text ||
+        "";
+
+      if (!text) {
+        lastError = new Error(`${model} returned empty response`);
+        continue;
+      }
+
+      console.log(`[AI] used model: ${model}`);
+      return text;
+    } catch (e) {
+      if (e.name === "AbortError") {
+        lastError = new Error(`${model} timeout`);
+      } else {
+        lastError = e;
+      }
+      continue;
+    } finally {
+      clearTimeout(timeout);
     }
-
-    // gemini-2.5-flash may return thinking parts — find the text part
-    const parts = json.candidates?.[0]?.content?.parts || [];
-    const text =
-      parts.find((p) => p.text && !p.thought)?.text ||
-      parts.find((p) => p.text)?.text ||
-      "";
-
-    if (!text) throw new Error("Gemini returned empty response");
-    return text;
-  } finally {
-    clearTimeout(timeout);
   }
+
+  throw (
+    lastError || new Error("All Gemini models quota exceeded. Try again later.")
+  );
 }
 
 function buildPrompt(type, data, childInfo) {
