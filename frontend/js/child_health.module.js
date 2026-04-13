@@ -47,7 +47,7 @@ async function loadChildren() {
 
 function childSelect(id) {
   return `<select id="${id}" class="ch-child-select">
-    <option value="">— Bola tanlang —</option>
+    <option value="">— Select child —</option>
     ${children.map((c) => `<option value="${c.id}">${c.name}</option>`).join("")}
   </select>`;
 }
@@ -57,25 +57,18 @@ function renderShell() {
   if (!page) return;
   page.innerHTML = `
     <div class="adm-header">
-      <div class="adm-title">🏥 Bola Sog'ligi</div>
-      <div class="adm-sub">O'sish, allergiya, shifokor, belgilar, harorat va boshqalar</div>
+      <div class="adm-title">🏥 Child Health</div>
+      <div class="adm-sub">Growth, doctor visits, symptoms, temperature and more</div>
     </div>
     <div class="adm-tabs" id="chTabs" style="flex-wrap:wrap;">
-      <button class="adm-tab active" data-tab="growth">📏 O'sish</button>
-      <button class="adm-tab" data-tab="allergies">⚠️ Allergiya</button>
-      <button class="adm-tab" data-tab="doctor">🏥 Shifokor</button>
-      <button class="adm-tab" data-tab="symptoms">🤒 Belgilar</button>
-      <button class="adm-tab" data-tab="temperature">🌡️ Harorat</button>
-      <button class="adm-tab" data-tab="milestones">🎯 Bosqichlar</button>
-      <button class="adm-tab" data-tab="sleep">😴 Uyqu</button>
-      <button class="adm-tab" data-tab="feeding">🍼 Ovqatlanish</button>
-      <button class="adm-tab" data-tab="diaper">👶 Baxmal</button>
-      <button class="adm-tab" data-tab="dental">🦷 Tish</button>
-      <button class="adm-tab" data-tab="eye">👁️ Ko'z</button>
-      <button class="adm-tab" data-tab="hearing">👂 Eshitish</button>
-      <button class="adm-tab" data-tab="solid">🥣 Qo'shimcha ovqat</button>
-      <button class="adm-tab" data-tab="medhistory">💊 Dori tarixi</button>
-      <button class="adm-tab" data-tab="certificates">📜 Sertifikatlar</button>
+      <button class="adm-tab active" data-tab="growth">📏 Growth</button>
+      <button class="adm-tab" data-tab="doctor">🏥 Doctor Visits</button>
+      <button class="adm-tab" data-tab="symptoms">🤒 Symptoms</button>
+      <button class="adm-tab" data-tab="temperature">🌡️ Temperature</button>
+      <button class="adm-tab" data-tab="dental">🦷 Dental</button>
+      <button class="adm-tab" data-tab="eye">👁️ Eye</button>
+      <button class="adm-tab" data-tab="hearing">👂 Hearing</button>
+      <button class="adm-tab" data-tab="medhistory">💊 Med History</button>
     </div>
     <div id="chContent"></div>
   `;
@@ -97,13 +90,10 @@ function setupTabs() {
 async function loadTab(tab) {
   const content = document.getElementById("chContent");
   if (!content) return;
-  content.innerHTML = `<div class="adm-loading">⏳ Yuklanmoqda...</div>`;
+  content.innerHTML = `<div class="adm-loading">⏳ Loading...</div>`;
   switch (tab) {
     case "growth":
       await renderGrowth(content);
-      break;
-    case "allergies":
-      await renderAllergies(content);
       break;
     case "doctor":
       await renderDoctorVisits(content);
@@ -114,18 +104,6 @@ async function loadTab(tab) {
     case "temperature":
       await renderTemperature(content);
       break;
-    case "milestones":
-      await renderMilestones(content);
-      break;
-    case "sleep":
-      await renderSleep(content);
-      break;
-    case "feeding":
-      await renderFeeding(content);
-      break;
-    case "diaper":
-      await renderDiaper(content);
-      break;
     case "dental":
       await renderDental(content);
       break;
@@ -135,14 +113,8 @@ async function loadTab(tab) {
     case "hearing":
       await renderHearing(content);
       break;
-    case "solid":
-      await renderSolidFood(content);
-      break;
     case "medhistory":
       await renderMedHistory(content);
-      break;
-    case "certificates":
-      await renderCertificates(content);
       break;
   }
 }
@@ -151,17 +123,17 @@ async function loadTab(tab) {
 async function renderGrowth(el) {
   el.innerHTML = `
     <div class="adm-section">
-      <div class="adm-section-title">📏 O'sish ko'rsatkichlari</div>
+      <div class="adm-section-title">📏 Growth Measurements</div>
       ${childSelect("growthChild")}
       <form id="growthForm" class="ch-form" style="margin-top:14px;">
         <div class="ch-form-grid">
-          <div><label>Og'irlik (kg)</label><input type="number" id="gWeight" step="0.1" placeholder="12.5" /></div>
-          <div><label>Bo'y (cm)</label><input type="number" id="gHeight" step="0.1" placeholder="85" /></div>
-          <div><label>Bosh aylanasi (cm)</label><input type="number" id="gHead" step="0.1" placeholder="46" /></div>
-          <div><label>Sana</label><input type="date" id="gDate" required /></div>
+          <div><label>Weight (kg)</label><input type="number" id="gWeight" step="0.1" placeholder="12.5" /></div>
+          <div><label>Height (cm)</label><input type="number" id="gHeight" step="0.1" placeholder="85" /></div>
+          <div><label>Head circumference (cm)</label><input type="number" id="gHead" step="0.1" placeholder="46" /></div>
+          <div><label>Date</label><input type="date" id="gDate" required /></div>
         </div>
-        <textarea id="gNotes" placeholder="Izoh (ixtiyoriy)" rows="2"></textarea>
-        <button type="submit" class="adm-btn-primary">💾 Saqlash</button>
+        <textarea id="gNotes" placeholder="Notes (optional)" rows="2"></textarea>
+        <button type="submit" class="adm-btn-primary">💾 Save</button>
       </form>
       <div id="growthList" style="margin-top:20px;"></div>
     </div>
@@ -175,7 +147,7 @@ async function renderGrowth(el) {
     .addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!selectedChildId) {
-        toast("Bola tanlang", "warning");
+        toast("Please select a child", "warning");
         return;
       }
       const { error } = await supabase.from("child_growth").insert({
@@ -188,10 +160,10 @@ async function renderGrowth(el) {
         notes: document.getElementById("gNotes").value.trim() || null,
       });
       if (error) {
-        toast("Xato: " + error.message, "error");
+        toast("Error: " + error.message, "error");
         return;
       }
-      toast("✅ Saqlandi", "success");
+      toast("✅ Saved", "success");
       e.target.reset();
       loadGrowthList();
     });
@@ -206,11 +178,11 @@ async function loadGrowthList() {
     .eq("child_id", selectedChildId)
     .order("measured_at", { ascending: false });
   if (!data?.length) {
-    el.innerHTML = `<div class="adm-empty">Ma'lumot yo'q</div>`;
+    el.innerHTML = `<div class="adm-empty">No records found</div>`;
     return;
   }
   el.innerHTML = `<div class="adm-table-wrap"><table class="adm-table">
-    <thead><tr><th>Sana</th><th>Og'irlik</th><th>Bo'y</th><th>Bosh</th><th>Izoh</th><th></th></tr></thead>
+    <thead><tr><th>Date</th><th>Weight</th><th>Height</th><th>Head</th><th>Notes</th><th></th></tr></thead>
     <tbody>${data
       .map(
         (r) => `<tr>
@@ -313,18 +285,18 @@ async function loadAllergyList() {
 async function renderDoctorVisits(el) {
   el.innerHTML = `
     <div class="adm-section">
-      <div class="adm-section-title">🏥 Shifokor tashriflari</div>
+      <div class="adm-section-title">🏥 Doctor Visits</div>
       ${childSelect("doctorChild")}
       <form id="doctorForm" class="ch-form" style="margin-top:14px;">
         <div class="ch-form-grid">
-          <div><label>Sana *</label><input type="date" id="dDate" required /></div>
-          <div><label>Shifokor</label><input type="text" id="dDoctor" placeholder="Dr. Karimov" /></div>
-          <div><label>Klinika</label><input type="text" id="dClinic" placeholder="1-son poliklinika" /></div>
-          <div><label>Tashxis</label><input type="text" id="dDiagnosis" placeholder="ARVI, bronxit..." /></div>
+          <div><label>Date *</label><input type="date" id="dDate" required /></div>
+          <div><label>Doctor</label><input type="text" id="dDoctor" placeholder="Dr. Smith" /></div>
+          <div><label>Clinic</label><input type="text" id="dClinic" placeholder="City Clinic" /></div>
+          <div><label>Diagnosis</label><input type="text" id="dDiagnosis" placeholder="ARVI, bronchitis..." /></div>
         </div>
-        <textarea id="dPrescription" placeholder="Retsept / dorilar" rows="2"></textarea>
-        <textarea id="dNotes" placeholder="Izoh" rows="2"></textarea>
-        <button type="submit" class="adm-btn-primary">💾 Saqlash</button>
+        <textarea id="dPrescription" placeholder="Prescription / medicines" rows="2"></textarea>
+        <textarea id="dNotes" placeholder="Notes" rows="2"></textarea>
+        <button type="submit" class="adm-btn-primary">💾 Save</button>
       </form>
       <div id="doctorList" style="margin-top:20px;"></div>
     </div>
@@ -338,7 +310,7 @@ async function renderDoctorVisits(el) {
     .addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!selectedChildId) {
-        toast("Bola tanlang", "warning");
+        toast("Please select a child", "warning");
         return;
       }
       const { error } = await supabase.from("child_doctor_visits").insert({
@@ -353,10 +325,10 @@ async function renderDoctorVisits(el) {
         notes: document.getElementById("dNotes").value.trim() || null,
       });
       if (error) {
-        toast("Xato: " + error.message, "error");
+        toast("Error: " + error.message, "error");
         return;
       }
-      toast("✅ Saqlandi", "success");
+      toast("✅ Saved", "success");
       e.target.reset();
       loadDoctorList();
     });
@@ -371,11 +343,11 @@ async function loadDoctorList() {
     .eq("child_id", selectedChildId)
     .order("visit_date", { ascending: false });
   if (!data?.length) {
-    el.innerHTML = `<div class="adm-empty">Tashrif yo'q</div>`;
+    el.innerHTML = `<div class="adm-empty">No visits found</div>`;
     return;
   }
   el.innerHTML = `<div class="adm-table-wrap"><table class="adm-table">
-    <thead><tr><th>Sana</th><th>Shifokor</th><th>Tashxis</th><th>Retsept</th><th></th></tr></thead>
+    <thead><tr><th>Date</th><th>Doctor</th><th>Diagnosis</th><th>Prescription</th><th></th></tr></thead>
     <tbody>${data
       .map(
         (r) => `<tr>
@@ -394,22 +366,22 @@ async function loadDoctorList() {
 async function renderSymptoms(el) {
   el.innerHTML = `
     <div class="adm-section">
-      <div class="adm-section-title">🤒 Kasallik belgilari</div>
+      <div class="adm-section-title">🤒 Illness Symptoms</div>
       ${childSelect("symptomChild")}
       <form id="symptomForm" class="ch-form" style="margin-top:14px;">
         <div class="ch-form-grid">
-          <div><label>Belgi *</label><input type="text" id="sSymptom" placeholder="Isitma, yo'tal..." required /></div>
-          <div><label>Daraja</label>
+          <div><label>Symptom *</label><input type="text" id="sSymptom" placeholder="Fever, cough..." required /></div>
+          <div><label>Severity</label>
             <select id="sSeverity">
-              <option value="mild">Yengil</option>
-              <option value="moderate">O'rtacha</option>
-              <option value="severe">Og'ir</option>
+              <option value="mild">Mild</option>
+              <option value="moderate">Moderate</option>
+              <option value="severe">Severe</option>
             </select>
           </div>
-          <div><label>Boshlangan</label><input type="date" id="sStart" /></div>
-          <div><label>Tugagan</label><input type="date" id="sEnd" /></div>
+          <div><label>Started</label><input type="date" id="sStart" /></div>
+          <div><label>Ended</label><input type="date" id="sEnd" /></div>
         </div>
-        <button type="submit" class="adm-btn-primary">💾 Saqlash</button>
+        <button type="submit" class="adm-btn-primary">💾 Save</button>
       </form>
       <div id="symptomList" style="margin-top:20px;"></div>
     </div>
@@ -423,7 +395,7 @@ async function renderSymptoms(el) {
     .addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!selectedChildId) {
-        toast("Bola tanlang", "warning");
+        toast("Please select a child", "warning");
         return;
       }
       const { error } = await supabase.from("child_symptoms").insert({
@@ -435,10 +407,10 @@ async function renderSymptoms(el) {
         ended_at: document.getElementById("sEnd").value || null,
       });
       if (error) {
-        toast("Xato: " + error.message, "error");
+        toast("Error: " + error.message, "error");
         return;
       }
-      toast("✅ Saqlandi", "success");
+      toast("✅ Saved", "success");
       e.target.reset();
       loadSymptomList();
     });
@@ -453,12 +425,12 @@ async function loadSymptomList() {
     .eq("child_id", selectedChildId)
     .order("created_at", { ascending: false });
   if (!data?.length) {
-    el.innerHTML = `<div class="adm-empty">Belgi yo'q</div>`;
+    el.innerHTML = `<div class="adm-empty">No symptoms found</div>`;
     return;
   }
   const sev = { mild: "green", moderate: "yellow", severe: "red" };
   el.innerHTML = `<div class="adm-table-wrap"><table class="adm-table">
-    <thead><tr><th>Belgi</th><th>Daraja</th><th>Boshlangan</th><th>Tugagan</th><th></th></tr></thead>
+    <thead><tr><th>Symptom</th><th>Severity</th><th>Started</th><th>Ended</th><th></th></tr></thead>
     <tbody>${data
       .map(
         (r) => `<tr>
@@ -477,23 +449,23 @@ async function loadSymptomList() {
 async function renderTemperature(el) {
   el.innerHTML = `
     <div class="adm-section">
-      <div class="adm-section-title">🌡️ Harorat jurnali</div>
+      <div class="adm-section-title">🌡️ Temperature Log</div>
       ${childSelect("tempChild")}
       <form id="tempForm" class="ch-form" style="margin-top:14px;">
         <div class="ch-form-grid">
-          <div><label>Harorat *</label><input type="number" id="tTemp" step="0.1" placeholder="36.6" required /></div>
-          <div><label>O'lchov usuli</label>
+          <div><label>Temperature *</label><input type="number" id="tTemp" step="0.1" placeholder="36.6" required /></div>
+          <div><label>Method</label>
             <select id="tMethod">
-              <option value="axillary">Qo'ltiq</option>
-              <option value="oral">Og'iz</option>
-              <option value="rectal">Rektal</option>
-              <option value="ear">Quloq</option>
+              <option value="axillary">Axillary</option>
+              <option value="oral">Oral</option>
+              <option value="rectal">Rectal</option>
+              <option value="ear">Ear</option>
             </select>
           </div>
-          <div><label>Sana va vaqt</label><input type="datetime-local" id="tTime" required /></div>
+          <div><label>Date & Time</label><input type="datetime-local" id="tTime" required /></div>
         </div>
-        <textarea id="tNotes" placeholder="Izoh" rows="2"></textarea>
-        <button type="submit" class="adm-btn-primary">💾 Saqlash</button>
+        <textarea id="tNotes" placeholder="Notes" rows="2"></textarea>
+        <button type="submit" class="adm-btn-primary">💾 Save</button>
       </form>
       <div id="tempList" style="margin-top:20px;"></div>
     </div>
@@ -505,7 +477,7 @@ async function renderTemperature(el) {
   document.getElementById("tempForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!selectedChildId) {
-      toast("Bola tanlang", "warning");
+      toast("Please select a child", "warning");
       return;
     }
     const { error } = await supabase.from("child_temperature_log").insert({
@@ -517,10 +489,10 @@ async function renderTemperature(el) {
       notes: document.getElementById("tNotes").value.trim() || null,
     });
     if (error) {
-      toast("Xato: " + error.message, "error");
+      toast("Error: " + error.message, "error");
       return;
     }
-    toast("✅ Saqlandi", "success");
+    toast("✅ Saved", "success");
     e.target.reset();
     loadTempList();
   });
@@ -536,17 +508,17 @@ async function loadTempList() {
     .order("measured_at", { ascending: false })
     .limit(20);
   if (!data?.length) {
-    el.innerHTML = `<div class="adm-empty">Yozuv yo'q</div>`;
+    el.innerHTML = `<div class="adm-empty">No records found</div>`;
     return;
   }
   el.innerHTML = `<div class="adm-table-wrap"><table class="adm-table">
-    <thead><tr><th>Vaqt</th><th>Harorat</th><th>Usul</th><th>Izoh</th><th></th></tr></thead>
+    <thead><tr><th>Time</th><th>Temperature</th><th>Method</th><th>Notes</th><th></th></tr></thead>
     <tbody>${data
       .map((r) => {
         const t = parseFloat(r.temperature);
         const badge = t >= 38.5 ? "red" : t >= 37.5 ? "yellow" : "green";
         return `<tr>
-        <td>${new Date(r.measured_at).toLocaleString("uz-UZ")}</td>
+        <td>${new Date(r.measured_at).toLocaleString("en-US")}</td>
         <td><span class="adm-badge ${badge}">${r.temperature}°C</span></td>
         <td>${r.method}</td>
         <td>${r.notes || "—"}</td>
@@ -646,13 +618,13 @@ async function loadMilestoneList() {
 
 // ─── Global delete helper ─────────────────────────────────────────────────────
 window.__chDelReload = async (table, id, listId) => {
-  if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+  if (!confirm("Are you sure you want to delete this record?")) return;
   const { error } = await supabase.from(table).delete().eq("id", id);
   if (error) {
-    toast("Xato: " + error.message, "error");
+    toast("Error: " + error.message, "error");
     return;
   }
-  toast("✅ O'chirildi", "success");
+  toast("✅ Deleted", "success");
   document
     .getElementById(listId)
     ?.querySelectorAll("tr")

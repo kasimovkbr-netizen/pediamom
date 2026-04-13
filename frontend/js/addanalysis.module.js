@@ -305,8 +305,8 @@ async function runAIAnalysis(analysisId, type, data) {
   if (!btn || !block) return;
 
   btn.disabled = true;
-  btn.textContent = "⏳ Tahlil qilinmoqda...";
-  block.innerHTML = `<div style="color:#64748b;font-size:14px;padding:12px;">⏳ AI tahlil qilinmoqda, iltimos kuting...</div>`;
+  btn.textContent = "⏳ Analyzing...";
+  block.innerHTML = `<div style="color:#64748b;font-size:14px;padding:12px;">⏳ AI analysis in progress, please wait...</div>`;
   block.style.display = "block";
 
   try {
@@ -315,7 +315,7 @@ async function runAIAnalysis(analysisId, type, data) {
       error: sessionError,
     } = await supabase.auth.getSession();
     if (sessionError || !session) {
-      block.innerHTML = `<div class="ai-error-box">❌ Session muddati o'tgan. Qayta kiring.</div>`;
+      block.innerHTML = `<div class="ai-error-box">❌ Session expired. Please log in again.</div>`;
       return;
     }
 
@@ -335,20 +335,20 @@ async function runAIAnalysis(analysisId, type, data) {
 
     if (!res.ok || !result.success) {
       if (result.error?.code === "insufficient_credits") {
-        block.innerHTML = `<div class="ai-error-box">❌ Kredit yetarli emas. Kerak: <b>${result.error.creditsNeeded}</b>, mavjud: <b>${result.error.creditsAvailable ?? 0}</b>. <a href="#" onclick="document.querySelector('[data-page=billing]')?.click();return false;">Kredit sotib olish →</a></div>`;
+        block.innerHTML = `<div class="ai-error-box">❌ Insufficient credits. Required: <b>${result.error.creditsNeeded}</b>, available: <b>${result.error.creditsAvailable ?? 0}</b>. <a href="#" onclick="document.querySelector('[data-page=billing]')?.click();return false;">Buy credits →</a></div>`;
       } else {
-        block.innerHTML = `<div class="ai-error-box">❌ ${result.error?.message || "AI tahlil amalga oshmadi"}</div>`;
+        block.innerHTML = `<div class="ai-error-box">❌ ${result.error?.message || "AI analysis failed"}</div>`;
       }
       return;
     }
 
     renderAISummary(block, result.data);
-    btn.textContent = "🔄 Qayta tahlil";
+    btn.textContent = "🔄 Re-analyze";
   } catch (err) {
     console.error("AI analysis error:", err);
     const msg = err.message?.includes("quota")
-      ? "❌ AI servis vaqtincha mavjud emas (quota). Keyinroq urinib ko'ring."
-      : "❌ Server bilan bog'lanib bo'lmadi. Qayta urinib ko'ring.";
+      ? "❌ AI service temporarily unavailable (quota exceeded). Please try again later."
+      : "❌ Could not connect to server. Please try again.";
     block.innerHTML = `<div class="ai-error-box">${msg}</div>`;
   } finally {
     btn.disabled = false;
@@ -359,10 +359,10 @@ function renderAISummary(block, result) {
   if (!block || !result) return;
 
   let html = `<div class="ai-summary-block">`;
-  html += `<h4 style="margin:0 0 12px;color:#1e293b;font-size:16px;">🤖 AI Tahlil Natijasi</h4>`;
+  html += `<h4 style="margin:0 0 12px;color:#1e293b;font-size:16px;">🤖 AI Analysis Result</h4>`;
 
   if (result.creditsUsed) {
-    html += `<div class="ai-credit-used">${result.creditsUsed} kredit ishlatildi · Qoldi: ${result.creditsRemaining ?? "?"}</div>`;
+    html += `<div class="ai-credit-used">${result.creditsUsed} credits used · Remaining: ${result.creditsRemaining ?? "?"}</div>`;
   }
 
   if (result.interpretation) {
@@ -370,7 +370,7 @@ function renderAISummary(block, result) {
   }
 
   if (result.recommendations?.length > 0) {
-    html += `<p style="font-weight:600;color:#1e293b;margin:12px 0 6px;font-size:14px;">Tavsiyalar:</p><ul style="margin:0;padding-left:20px;">`;
+    html += `<p style="font-weight:600;color:#1e293b;margin:12px 0 6px;font-size:14px;">Recommendations:</p><ul style="margin:0;padding-left:20px;">`;
     result.recommendations.forEach((rec) => {
       html += `<li style="color:#475569;font-size:13px;margin-bottom:4px;">${rec}</li>`;
     });

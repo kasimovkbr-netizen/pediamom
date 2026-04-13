@@ -704,6 +704,11 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr auto;
   gap: 12px;
+  margin-bottom: 0;
+}
+
+#medicineList {
+  margin-top: 0;
 }
 
 #addMedicineForm input {

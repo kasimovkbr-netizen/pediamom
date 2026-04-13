@@ -386,13 +386,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   <div class="period-calendar-section">
     <div class="chat-header">
       <h3>🤖 AI Health Assistant</h3>
-      <span id="chatCreditBadge" class="ai-credit-badge">5 ta bepul</span>
+      <span id="chatCreditBadge" class="ai-credit-badge">5 free</span>
     </div>
-    <p style="font-size:13px;color:#64748b;margin:0 0 12px;">Sog'liq haqida savollar bering — hayz, homiladorlik, bola sog'lig'i</p>
+    <p style="font-size:13px;color:#64748b;margin:0 0 12px;">Ask health questions — menstrual cycle, pregnancy, child health</p>
     <div id="chatMessages" class="chat-messages"></div>
     <div class="chat-input-row">
-      <textarea id="chatInput" class="chat-input" placeholder="Savolingizni yozing..." rows="2"></textarea>
-      <button id="chatSendBtn" class="chat-send-btn">Yuborish</button>
+      <textarea id="chatInput" class="chat-input" placeholder="Type your question..." rows="2"></textarea>
+      <button id="chatSendBtn" class="chat-send-btn">Send</button>
     </div>
   </div>
 </div>

@@ -535,9 +535,9 @@ export function initHealthChat() {
   // Show welcome message
   appendChatMessage(
     "assistant",
-    "👋 Salom! Men PediaMom AI yordamchisiman.\n\n" +
-      "Sog'liq haqida savollaringizni bering — hayz sikli, homiladorlik, bola sog'lig'i va boshqalar.\n\n" +
-      "💡 Birinchi 5 ta xabar bepul!",
+    "👋 Hello! I'm PediaMom AI Health Assistant.\n\n" +
+      "Ask me health questions — menstrual cycle, pregnancy, child health and more.\n\n" +
+      "💡 First 5 messages are free!",
   );
 }
 
@@ -581,12 +581,12 @@ async function sendChatMessage() {
       if (result.error?.code === "insufficient_credits") {
         appendChatMessage(
           "assistant",
-          "❌ Kreditlar tugadi. Billing bo'limidan kredit sotib oling.",
+          "❌ Insufficient credits. Please buy credits from the Billing section.",
         );
       } else {
         appendChatMessage(
           "assistant",
-          "❌ Xatolik yuz berdi. Qayta urinib ko'ring.",
+          "❌ Something went wrong. Please try again.",
         );
       }
       return;
@@ -600,14 +600,17 @@ async function sendChatMessage() {
 
     if (result.data.creditsUsed > 0) {
       const badge = document.getElementById("chatCreditBadge");
-      if (badge) badge.textContent = `${result.data.creditsRemaining} kredit`;
+      if (badge) badge.textContent = `${result.data.creditsRemaining} credits`;
     }
   } catch (err) {
-    appendChatMessage("assistant", "❌ Server bilan bog'lanib bo'lmadi.");
+    appendChatMessage(
+      "assistant",
+      "❌ Could not connect to server. Please try again.",
+    );
   } finally {
     if (sendBtn) {
       sendBtn.disabled = false;
-      sendBtn.textContent = "Yuborish";
+      sendBtn.textContent = "Send";
     }
     scrollChatToBottom();
   }
