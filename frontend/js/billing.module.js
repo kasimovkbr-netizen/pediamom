@@ -40,16 +40,10 @@ const TIERS = [
     price: "$14.99/mo",
     credits: 500,
     features: () => [
-      `500 ${t("credits")}/${t("month_short") !== "month_short" ? t("month_short") : "oy"}`,
-      t("renews_monthly") !== "renews_monthly"
-        ? t("renews_monthly")
-        : "Har oy yangilanadi",
-      t("all_analysis_types") !== "all_analysis_types"
-        ? t("all_analysis_types")
-        : "Barcha tahlil turlari",
-      t("telegram_reminders") !== "telegram_reminders"
-        ? t("telegram_reminders")
-        : "Telegram eslatmalar",
+      `500 ${t("credits")}/month`,
+      "Renews every month",
+      "All analysis types",
+      "Telegram reminders",
     ],
     color: "#7c3aed",
     popular: true,
@@ -107,7 +101,7 @@ async function renderBilling() {
 
   container.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;">
     <div style="font-size:32px;margin-bottom:12px;">⏳</div>
-    <div>Yuklanmoqda...</div>
+    <div>Loading...</div>
   </div>`;
 
   const userData = await getUserData();
@@ -146,7 +140,7 @@ function buildHTML(credits, freeRemaining, freePercent, freeUsed, freeLimit) {
   <div class="bl-free-card">
     <div class="bl-free-top">
       <span class="bl-free-title">🎁 ${t("free_credits")}</span>
-      <span class="bl-free-count">${freeRemaining}/${freeLimit} ${t("remaining") !== "remaining" ? t("remaining") : "qoldi"}</span>
+      <span class="bl-free-count">${freeRemaining}/${freeLimit} left</span>
     </div>
     <div class="bl-progress-bar">
       <div class="bl-progress-fill ${freePercent >= 80 ? "bl-progress-warn" : ""}" style="width:${freePercent}%"></div>
@@ -166,11 +160,11 @@ function buildHTML(credits, freeRemaining, freePercent, freeUsed, freeLimit) {
           ${pkg.popular ? `<div class="bl-pkg-badge">${t("most_popular")}</div>` : ""}
           <div class="bl-pkg-emoji">${pkg.emoji}</div>
           <div class="bl-pkg-name">${pkg.name}</div>
-          <div class="bl-pkg-credits">${pkg.credits}<span>${t("credits")}</span></div>
+          <div class="bl-pkg-credits">${pkg.credits}<span> Credits</span></div>
           <div class="bl-pkg-price">${pkg.price}</div>
-          <div class="bl-pkg-per">${((parseFloat(pkg.price.replace("$", "")) / pkg.credits) * 100).toFixed(1)}¢ / ${t("credits")}</div>
+          <div class="bl-pkg-per">${((parseFloat(pkg.price.replace("$", "")) / pkg.credits) * 100).toFixed(1)}¢ / credit</div>
           <button class="bl-buy-btn" data-pkg="${pkg.id}" data-credits="${pkg.credits}" data-name="${pkg.name}" data-price="${pkg.price}">
-            ${t("buy_btn")}
+            Buy
           </button>
         </div>
       `,
@@ -193,7 +187,7 @@ function buildHTML(credits, freeRemaining, freePercent, freeUsed, freeLimit) {
           ${tier.popular ? `<div class="bl-tier-badge">${t("recommended")}</div>` : ""}
           <div class="bl-tier-name">${name}</div>
           <div class="bl-tier-price">${tier.price}</div>
-          <div class="bl-tier-credits">${tier.credits} ${t("credits")}/oy</div>
+          <div class="bl-tier-credits">${tier.credits} credits/month</div>
           <ul class="bl-tier-features">
             ${features.map((f) => `<li>✓ ${f}</li>`).join("")}
           </ul>
@@ -234,17 +228,11 @@ function attachEvents(container) {
         title: t("confirm_purchase"),
         emoji: "🪙",
         rows: [
-          [
-            t("package") !== "package" ? t("package") : "Paket",
-            btn.dataset.name,
-          ],
-          [t("credits"), btn.dataset.credits],
-          [t("price") !== "price" ? t("price") : "Narx", btn.dataset.price],
+          ["Package", btn.dataset.name],
+          ["Credits", btn.dataset.credits],
+          ["Price", btn.dataset.price],
         ],
-        note:
-          t("stripe_redirect") !== "stripe_redirect"
-            ? t("stripe_redirect")
-            : "Stripe to'lov sahifasiga yo'naltirilasiz",
+        note: "You will be redirected to Stripe payment page",
         confirmText: t("pay_stripe"),
         onConfirm: async () => {
           await handleBuyStripe(
@@ -264,13 +252,10 @@ function attachEvents(container) {
         title: t("subscribe_btn"),
         emoji: "📅",
         rows: [
-          [t("plan") !== "plan" ? t("plan") : "Reja", btn.dataset.name],
-          [t("credits"), `${btn.dataset.credits}/oy`],
+          ["Plan", btn.dataset.name],
+          ["Credits", `${btn.dataset.credits}/month`],
         ],
-        note:
-          t("stripe_redirect") !== "stripe_redirect"
-            ? t("stripe_redirect")
-            : "Stripe to'lov sahifasiga yo'naltirilasiz",
+        note: "You will be redirected to Stripe payment page",
         confirmText: t("pay_stripe"),
         onConfirm: async () => {
           await handleSubscribeStripe(btn.dataset.tier, btn.dataset.name);
@@ -294,18 +279,15 @@ async function handleBuyStripe(packageId, name, credits) {
     if (res.success && res.data?.checkoutUrl) {
       window.location.href = res.data.checkoutUrl;
     } else if (res.success && res.demo) {
-      toast(`✅ Demo: ${credits} kredit qo'shildi!`, "success");
+      toast(`✅ Demo: ${credits} credits added!`, "success");
       setTimeout(() => renderBilling(), 1000);
     } else {
-      const errMsg = res.error?.message || res.error || "Xatolik yuz berdi";
+      const errMsg = res.error?.message || res.error || "Something went wrong";
       toast("❌ " + errMsg, "error");
     }
   } catch (e) {
     console.error("[billing] fetch error:", e);
-    toast(
-      "❌ Server bilan bog'lanib bo'lmadi. Serverni ishga tushiring.",
-      "error",
-    );
+    toast("❌ Could not connect to server.", "error");
   }
 }
 
@@ -321,18 +303,15 @@ async function handleSubscribeStripe(tierId, name) {
     if (res.success && res.data?.checkoutUrl) {
       window.location.href = res.data.checkoutUrl;
     } else if (res.success && res.demo) {
-      toast(`✅ Demo: Obuna faollashtirildi!`, "success");
+      toast(`✅ Demo: Subscription activated!`, "success");
       setTimeout(() => renderBilling(), 1000);
     } else {
-      const errMsg = res.error?.message || res.error || "Xatolik yuz berdi";
+      const errMsg = res.error?.message || res.error || "Something went wrong";
       toast("❌ " + errMsg, "error");
     }
   } catch (e) {
     console.error("[billing] fetch error:", e);
-    toast(
-      "❌ Server bilan bog'lanib bo'lmadi. Serverni ishga tushiring.",
-      "error",
-    );
+    toast("❌ Could not connect to server.", "error");
   }
 }
 
@@ -386,7 +365,7 @@ function showConfirmModal({
     const cancelBtn = modal.querySelector("#blCancel");
     btn.disabled = true;
     cancelBtn.disabled = true;
-    btn.textContent = "⏳ Yuklanmoqda...";
+    btn.textContent = "⏳ Loading...";
     await onConfirm();
     modal.remove();
   };

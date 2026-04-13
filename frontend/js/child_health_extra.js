@@ -544,72 +544,80 @@ async function loadSolidList(childId) {
 
 // ─── MEDICATION HISTORY ───────────────────────────────────────────────────────
 export async function renderMedHistory(el, childId, userId) {
+  // Build child select using the children array from parent module
+  const childSelectHtml = `<select id="medHistChild" class="ch-child-select">
+    <option value="">— Select child —</option>
+  </select>`;
+
   el.innerHTML = `
     <div class="adm-section">
-      <div class="adm-section-title">💊 Dori tarixi</div>
-      <form id="medHistForm" class="ch-form">
-        <div class="ch-form-grid">
-          <div><label>Dori nomi *</label><input type="text" id="mhName" placeholder="Amoxicillin" required /></div>
-          <div><label>Dozasi</label><input type="text" id="mhDosage" placeholder="5ml" /></div>
-          <div><label>Boshlangan</label><input type="date" id="mhStart" /></div>
-          <div><label>Tugagan</label><input type="date" id="mhEnd" /></div>
-          <div><label>Sabab</label><input type="text" id="mhReason" placeholder="ARVI, bronxit..." /></div>
-          <div><label>Shifokor</label><input type="text" id="mhDoctor" placeholder="Dr. Karimov" /></div>
-        </div>
-        <button type="submit" class="adm-btn-primary">💾 Saqlash</button>
-      </form>
+      <div class="adm-section-title">💊 Med History</div>
+      <p style="font-size:13px;color:#64748b;margin:0 0 14px;">
+        Medicines added in the <strong>Medicines</strong> section appear here automatically.
+        Select a child to view their medicine history.
+      </p>
+      ${childSelectHtml}
       <div id="medHistList" style="margin-top:16px;"></div>
     </div>
   `;
-  if (!childId) return;
-  await loadMedHistList(childId);
-  document
-    .getElementById("medHistForm")
-    .addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const { error } = await supabase.from("medication_history").insert({
-        child_id: childId,
-        parent_id: userId,
-        medicine_name: document.getElementById("mhName").value.trim(),
-        dosage: document.getElementById("mhDosage").value.trim() || null,
-        start_date: document.getElementById("mhStart").value || null,
-        end_date: document.getElementById("mhEnd").value || null,
-        reason: document.getElementById("mhReason").value.trim() || null,
-        prescribed_by: document.getElementById("mhDoctor").value.trim() || null,
-      });
-      if (error) {
-        toast("Xato: " + error.message, "error");
-        return;
-      }
-      toast("✅ Saqlandi", "success");
-      e.target.reset();
-      await loadMedHistList(childId);
-    });
+
+  // Populate child select from Supabase
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return;
+  const uid = session.user.id;
+
+  const { data: kids } = await supabase
+    .from("children")
+    .select("id, name")
+    .eq("parent_id", uid);
+
+  const sel = document.getElementById("medHistChild");
+  (kids || []).forEach((c) => {
+    const opt = document.createElement("option");
+    opt.value = c.id;
+    opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
+
+  // If childId already selected, pre-select and load
+  if (childId) {
+    sel.value = childId;
+    await loadMedHistList(childId);
+  }
+
+  sel.addEventListener("change", async (e) => {
+    if (e.target.value) await loadMedHistList(e.target.value);
+    else document.getElementById("medHistList").innerHTML = "";
+  });
 }
 
 async function loadMedHistList(childId) {
   const el = document.getElementById("medHistList");
   if (!el) return;
-  const { data } = await supabase
-    .from("medication_history")
-    .select("*")
+
+  const { data: medicines } = await supabase
+    .from("medicine_list")
+    .select("id, name, dosage, times_per_day, active, created_at")
     .eq("child_id", childId)
-    .order("start_date", { ascending: false });
-  if (!data?.length) {
-    el.innerHTML = `<div class="adm-empty">Yozuv yo'q</div>`;
+    .order("created_at", { ascending: false });
+
+  if (!medicines?.length) {
+    el.innerHTML = `<div class="adm-empty">No medicines found for this child. Add medicines in the Medicines section.</div>`;
     return;
   }
+
   el.innerHTML = `<div class="adm-table-wrap"><table class="adm-table">
-    <thead><tr><th>Dori</th><th>Dozasi</th><th>Boshlangan</th><th>Tugagan</th><th>Sabab</th><th></th></tr></thead>
-    <tbody>${data
+    <thead><tr><th>Medicine</th><th>Dosage</th><th>Times/day</th><th>Status</th><th>Added</th></tr></thead>
+    <tbody>${medicines
       .map(
         (r) => `<tr>
-      <td><strong>${r.medicine_name}</strong></td>
+      <td><strong>${r.name}</strong></td>
       <td>${r.dosage || "—"}</td>
-      <td>${r.start_date || "—"}</td>
-      <td>${r.end_date || "—"}</td>
-      <td>${r.reason || "—"}</td>
-      <td><button class="adm-btn-sm red" onclick="window.__chDelReload('medication_history','${r.id}','medHistList')">🗑</button></td>
+      <td>${r.times_per_day || 1}x/day</td>
+      <td><span class="adm-badge ${r.active ? "green" : "gray"}">${r.active ? "Active" : "Stopped"}</span></td>
+      <td>${new Date(r.created_at).toLocaleDateString("en-US")}</td>
     </tr>`,
       )
       .join("")}</tbody>

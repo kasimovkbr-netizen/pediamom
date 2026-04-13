@@ -114,7 +114,7 @@ async function loadTab(tab) {
       await renderHearing(content);
       break;
     case "medhistory":
-      await renderMedHistory(content);
+      await renderMedHistory(content, selectedChildId, userId);
       break;
   }
 }
