@@ -226,7 +226,7 @@ function setupEventListeners() {
     saveProfileBtn.onclick = async () => {
       const name = document.getElementById("settingsDisplayName")?.value.trim();
       if (!name) {
-        showMessage("Ism kiritilmadi", "error");
+        showMessage("Please enter your name", "error");
         return;
       }
       try {
@@ -235,9 +235,9 @@ function setupEventListeners() {
           .update({ display_name: name })
           .eq("id", currentUser.id);
         if (error) throw error;
-        showMessage("Profil saqlandi!");
+        showMessage("Profile saved!");
       } catch (e) {
-        showMessage("Xatolik: " + e.message, "error");
+        showMessage("Error: " + e.message, "error");
       }
     };
   }
@@ -251,14 +251,14 @@ function setupEventListeners() {
       const errorEl = document.getElementById("passwordError");
       if (!newPw || !confirmPw) {
         if (errorEl) {
-          errorEl.textContent = "Barcha maydonlarni to'ldiring";
+          errorEl.textContent = "Please fill all fields";
           errorEl.style.display = "block";
         }
         return;
       }
       if (newPw !== confirmPw) {
         if (errorEl) {
-          errorEl.textContent = "Parollar mos kelmadi";
+          errorEl.textContent = "Passwords do not match";
           errorEl.style.display = "block";
         }
         return;
@@ -267,7 +267,7 @@ function setupEventListeners() {
       try {
         const { error } = await supabase.auth.updateUser({ password: newPw });
         if (error) throw error;
-        showMessage("Parol o'zgartirildi!");
+        showMessage("Password changed!");
         ["newPassword", "confirmPassword", "currentPassword"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.value = "";
@@ -290,14 +290,15 @@ function setupEventListeners() {
     };
   }
 
-  // Language select
+  // Language select — use dynamic import properly
   const langSelect = document.getElementById("languageSelect");
   if (langSelect) {
-    const { getLang, setLang } = await import("./i18n.js");
-    langSelect.value = getLang();
-    langSelect.onchange = () => {
-      setLang(langSelect.value);
-    };
+    import("./i18n.js").then(({ getLang, setLang }) => {
+      langSelect.value = getLang();
+      langSelect.onchange = () => {
+        setLang(langSelect.value);
+      };
+    });
   }
 
   // Notifications

@@ -212,41 +212,9 @@ async function renderChecklist() {
    MISSED YESTERDAY
 ====================== */
 async function checkMissedYesterday() {
+  // Removed: this warning was showing incorrectly and is not needed
   const warning = document.getElementById("missedWarning");
-  if (!warning) return;
-
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  const yDate = y.toISOString().split("T")[0];
-
-  let query = supabase
-    .from("medicine_logs")
-    .select("taken")
-    .eq("parent_id", userId)
-    .eq("date", yDate);
-
-  if (selectedChildId) {
-    query = query.eq("child_id", selectedChildId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    console.error("[daily_checklist] checkMissedYesterday error:", error);
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    warning.classList.add("hidden");
-    return;
-  }
-
-  if (data.every((d) => d.taken === false)) {
-    warning.innerHTML = `⚠️ ${t("missed_yesterday") !== "missed_yesterday" ? t("missed_yesterday") : "Yesterday you missed your medicines"}`;
-    warning.classList.remove("hidden");
-  } else {
-    warning.classList.add("hidden");
-  }
+  if (warning) warning.classList.add("hidden");
 }
 
 /* ======================
@@ -260,6 +228,6 @@ function toggleStats(show) {
 
   if (checklist) checklist.style.display = show ? "flex" : "none";
   if (chartBox) chartBox.style.display = show ? "block" : "none";
-  if (warning) warning.classList.toggle("hidden", !show);
+  if (warning) warning.classList.add("hidden"); // always hidden
   if (hint) hint.style.display = show ? "none" : "block";
 }

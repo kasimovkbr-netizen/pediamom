@@ -402,7 +402,7 @@ If a model returns a quota error, the next model in the chain is tried automatic
 ### Analysis Flow
 
 ```
-1. User submits analysis values (blood/urine/vitamin)
+1. User submits analysis values (blood or vitamin)
 2. Backend checks user credit balance
 3. If insufficient credits → return 402 error
 4. Build prompt with medical values + child context
@@ -417,11 +417,10 @@ If a model returns a quota error, the next model in the chain is tried automatic
 
 | Type | Credits | Description |
 |------|---------|-------------|
-| `blood` | 5 | Complete blood count interpretation |
-| `vitamin` | 4 | Vitamin deficiency analysis |
-| `urine` | 3 | Urinalysis interpretation |
-| `growth` | 2 | Growth percentile assessment |
-| `nutrition` | 3 | Nutritional status evaluation |
+| `blood` | 5 | Complete blood count interpretation (hemoglobin, ferritin, WBC) |
+| `vitamin` | 4 | Vitamin deficiency analysis (Vitamin D, B12) |
+
+> `wbc` = White Blood Cell count — one of the blood test parameters sent in the request body.
 
 ---
 
