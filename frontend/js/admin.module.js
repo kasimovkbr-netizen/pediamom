@@ -662,7 +662,6 @@ function showArticleModal({ title, article }) {
           </div>
         </div>
 
-        <textarea id="artWarning" placeholder="⚠️ Warning (optional)" rows="2" style="width:100%;box-sizing:border-box;">${esc(article?.warning || "")}</textarea>
 
         <select id="artCategory" required style="width:100%;box-sizing:border-box;">
           <option value="">Select category</option>
@@ -695,7 +694,6 @@ function showArticleModal({ title, article }) {
         content: document.getElementById("artContent").value.trim(),
         content_uz:
           document.getElementById("artContentUz").value.trim() || null,
-        warning: document.getElementById("artWarning").value.trim() || null,
         category: document.getElementById("artCategory").value,
       };
       try {
