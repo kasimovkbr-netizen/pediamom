@@ -23,12 +23,6 @@ export async function initMedicineModule() {
 
   userId = session.user.id;
 
-  supabase.auth.onAuthStateChange((event, sess) => {
-    if (event === "SIGNED_OUT" || !sess) {
-      window.location.href = "../auth/login.html";
-    }
-  });
-
   setupTabs();
   setupMedicineForm();
   setupSupplementForm();
@@ -187,6 +181,12 @@ async function loadChildrenDropdown() {
   if (!childSelect || !userId) return;
 
   await refreshChildrenDropdown(childSelect);
+
+  // Remove existing channel before creating new one
+  if (childrenChannel) {
+    supabase.removeChannel(childrenChannel);
+    childrenChannel = null;
+  }
 
   // Subscribe to children changes for real-time dropdown updates
   childrenChannel = supabase

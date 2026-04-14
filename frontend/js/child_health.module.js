@@ -4,6 +4,7 @@
 //         child_feeding_log, child_diaper_log, milestones
 import { supabase } from "./supabase.js";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 import {
   renderSleep,
   renderFeeding,
