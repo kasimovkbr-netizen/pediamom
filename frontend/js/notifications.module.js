@@ -31,12 +31,8 @@ function renderShell() {
   page.innerHTML = `
     <div class="adm-header">
       <div class="adm-title">🔔 ${t("notifications_title")}</div>
-      <div style="display:flex;gap:8px;">
-        <button class="adm-btn-primary" id="markAllRead">${t("mark_all_read")}</button>
-      </div>
     </div>
-    <div id="notifList"></div>
-    <div class="adm-section" style="margin-top:24px;">
+    <div class="adm-section" style="margin-top:8px;">
       <div class="adm-section-title">💬 ${t("send_feedback")}</div>
       <form id="feedbackForm" class="ch-form">
         <div class="ch-form-grid">
@@ -63,9 +59,6 @@ function renderShell() {
       </form>
     </div>
   `;
-  document
-    .getElementById("markAllRead")
-    ?.addEventListener("click", markAllRead);
   document
     .getElementById("feedbackForm")
     ?.addEventListener("submit", submitFeedback);

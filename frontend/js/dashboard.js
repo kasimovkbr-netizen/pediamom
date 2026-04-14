@@ -558,8 +558,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function checkAdminRole(uid) {
     const adminMenu = document.getElementById("adminMenu");
+    const notificationsMenu = document.getElementById("notificationsMenu");
 
-    // Default: hidden until confirmed admin
     if (adminMenu) adminMenu.classList.add("hidden");
     window.__userRole = "user";
 
@@ -573,6 +573,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!error && data?.role === "admin") {
         window.__userRole = "admin";
         if (adminMenu) adminMenu.classList.remove("hidden");
+        if (notificationsMenu) notificationsMenu.classList.add("hidden");
+      } else {
+        if (notificationsMenu) notificationsMenu.classList.remove("hidden");
       }
     } catch {
       // keep hidden on any error
