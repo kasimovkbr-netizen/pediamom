@@ -288,6 +288,9 @@ function setupEventListeners() {
         if (error) throw error;
 
         showMessage("✅ Password changed successfully!");
+        import("./toast.js").then(({ toast }) =>
+          toast("✅ Password changed successfully!", "success"),
+        );
         ["newPassword", "confirmPassword", "currentPassword"].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.value = "";

@@ -155,6 +155,12 @@
       if (localStorage.getItem("pediamom_darkmode") === "1") {
         document.body.dataset.theme = "dark";
       }
+      function togglePwVisibility(id, btn) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.type = input.type === "password" ? "text" : "password";
+        btn.textContent = input.type === "password" ? "👁" : "🙈";
+      }
     </script>
     <script type="module" src="../js/dashboard.js"></script>
     <script type="module">

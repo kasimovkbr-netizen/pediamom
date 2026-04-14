@@ -1,28 +1,56 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <title>Register | PediaMom</title>
-  <link rel="stylesheet" href="../css/style.css"> 
-</head>
-<body>
-  <div id="authPage" style="display:none;">
-  <div class="auth-page register-page">
-  <h2 data-i18n="parent_registration">Parent Registration</h2>
-<form id="registerForm">
-  <input id="email" type="email" data-i18n-placeholder="enter_email" placeholder="Enter email address" required />
-  <input id="password" type="password" data-i18n-placeholder="enter_password" placeholder="Enter password" required />
-  <button type="submit" data-i18n="register">Register</button>
-</form>
-</div>
-</div>
-<script>
-    window.__SUPABASE_URL__ = 'https://wgexnndxnfjzxlxncezu.supabase.co';
-    window.__SUPABASE_ANON_KEY__ = 'sb_publishable_E1JW4R0JEpe_V5PmCIGDVw_zMiLXtJT';
-</script>
-<script type="module" src="../js/auth.js"></script>
-<script type="module">
-  import { initI18n } from '../js/i18n.js';
-  initI18n();
-</script>
-</body>
+  <head>
+    <title>Register | PediaMom</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <div id="authPage" style="display: none">
+      <div class="auth-page register-page">
+        <h2 data-i18n="parent_registration">Parent Registration</h2>
+        <form id="registerForm">
+          <input
+            id="email"
+            type="email"
+            data-i18n-placeholder="enter_email"
+            placeholder="Enter email address"
+            required
+          />
+          <div class="pw-input-wrap">
+            <input
+              id="password"
+              type="password"
+              data-i18n-placeholder="enter_password"
+              placeholder="Enter password"
+              required
+            />
+            <button
+              type="button"
+              class="pw-eye-btn"
+              onclick="togglePwVisibility('password', this)"
+            >
+              👁
+            </button>
+          </div>
+          <button type="submit" data-i18n="register">Register</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      window.__SUPABASE_URL__ = "https://wgexnndxnfjzxlxncezu.supabase.co";
+      window.__SUPABASE_ANON_KEY__ =
+        "sb_publishable_E1JW4R0JEpe_V5PmCIGDVw_zMiLXtJT";
+      function togglePwVisibility(id, btn) {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.type = input.type === "password" ? "text" : "password";
+        btn.textContent = input.type === "password" ? "👁" : "🙈";
+      }
+    </script>
+    <script type="module" src="../js/auth.js"></script>
+    <script type="module">
+      import { initI18n } from "../js/i18n.js";
+      initI18n();
+    </script>
+  </body>
 </html>

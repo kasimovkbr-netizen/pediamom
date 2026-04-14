@@ -72,7 +72,6 @@ async function showSupplementsSection() {
       dosage: dosage || null,
       times_per_day: times,
       notes: "mother_supplement",
-      active: true,
     });
 
     if (error) {
@@ -93,7 +92,7 @@ async function loadSupplements(userId) {
 
   const { data } = await supabase
     .from("medicine_list")
-    .select("id, name, dosage, times_per_day, active")
+    .select("id, name, dosage, times_per_day")
     .eq("parent_id", userId)
     .is("child_id", null)
     .eq("notes", "mother_supplement")

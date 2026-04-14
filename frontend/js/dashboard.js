@@ -352,7 +352,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       <div>
         <label style="display:block;font-size:13px;color:#64748b;margin-bottom:4px;">${t("flow_level")}</label>
         <select id="flowLevel" style="padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;font-size:14px;width:100%;">
-          <option value="">${t("select_child")}</option>
           <option value="light">${t("flow_light")}</option>
           <option value="medium">${t("flow_medium")}</option>
           <option value="heavy">${t("flow_heavy")}</option>
@@ -427,21 +426,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       <small style="color:#94a3b8;font-size:12px;">${t("email_readonly")}</small>
     </div>
     <div id="settingsCredits" style="font-size:15px;font-weight:700;color:#2563eb;margin:8px 0;"></div>
-    <button id="saveProfileBtn" class="settings-save-btn">${t("profile_settings")}</button>
+    <button id="saveProfileBtn" class="settings-save-btn">${t("save")}</button>
   </div>
   <div class="settings-section">
     <h3>🔒 ${t("change_password")}</h3>
     <div class="settings-field">
       <label>${t("current_password")}</label>
-      <input type="password" id="currentPassword" placeholder="${t("current_password")}" />
+      <div class="pw-input-wrap">
+        <input type="password" id="currentPassword" placeholder="${t("current_password")}" />
+        <button type="button" class="pw-eye-btn" onclick="togglePwVisibility('currentPassword', this)">👁</button>
+      </div>
     </div>
     <div class="settings-field">
       <label>${t("new_password")}</label>
-      <input type="password" id="newPassword" placeholder="${t("new_password")}" />
+      <div class="pw-input-wrap">
+        <input type="password" id="newPassword" placeholder="${t("new_password")}" />
+        <button type="button" class="pw-eye-btn" onclick="togglePwVisibility('newPassword', this)">👁</button>
+      </div>
     </div>
     <div class="settings-field">
       <label>${t("confirm_password")}</label>
-      <input type="password" id="confirmPassword" placeholder="${t("confirm_password")}" />
+      <div class="pw-input-wrap">
+        <input type="password" id="confirmPassword" placeholder="${t("confirm_password")}" />
+        <button type="button" class="pw-eye-btn" onclick="togglePwVisibility('confirmPassword', this)">👁</button>
+      </div>
     </div>
     <p id="passwordError" class="settings-error" style="display:none;"></p>
     <button id="changePasswordBtn" class="settings-save-btn">${t("change_password")}</button>
