@@ -409,6 +409,14 @@ Object.assign(TRANSLATIONS.en, {
   weight_kg: "Weight (kg)",
   height_cm: "Height (cm)",
   head_cm: "Head circumference (cm)",
+  // Knowledge Base category descriptions
+  harmful_desc: "Important warnings about unsafe medicine use for children.",
+  immunity_desc:
+    "Simple ways to support your child's immunity and daily health.",
+  vaccines_desc: "Basic vaccine education and guidance for parents.",
+  herbal_desc: "Safe and beneficial herbal drinks for children's health.",
+  nutrition_desc: "Practical nutrition advice for healthy child development.",
+  sleep_desc: "Understanding sleep patterns and their role in child growth.",
 });
 
 Object.assign(TRANSLATIONS.uz, {
@@ -740,6 +748,13 @@ Object.assign(TRANSLATIONS.uz, {
   weight_kg: "Og'irlik (kg)",
   height_cm: "Bo'y (cm)",
   head_cm: "Bosh aylanasi (cm)",
+  // Knowledge Base category descriptions
+  harmful_desc: "Bolalar uchun xavfli dorilar haqida muhim ogohlantirishlar.",
+  immunity_desc: "Bolangizning immunitetini mustahkamlashning oddiy usullari.",
+  vaccines_desc: "Ota-onalar uchun emlash haqida asosiy ma'lumotlar.",
+  herbal_desc: "Bolalar sog'ligi uchun foydali o'simlik ichimliklar.",
+  nutrition_desc: "Sog'lom rivojlanish uchun amaliy ovqatlanish maslahatlari.",
+  sleep_desc: "Uyqu naqshlari va bolaning o'sishidagi roli.",
 });
 
 // ─── Core i18n engine ─────────────────────────────────────────────────────────

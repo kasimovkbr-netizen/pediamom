@@ -116,57 +116,57 @@ document.addEventListener("DOMContentLoaded", async () => {
 </div>
 `,
 
-    knowledgebase: `
+    knowledgebase: () => `
   <div class="knowledge-page">
     <div class="kb-container">
       <div class="kb-header">
-        <h2>Knowledge Base</h2>
-        <p>Helpful educational content for parents</p>
+        <h2>${t("kb_title")}</h2>
+        <p>${t("kb_subtitle")}</p>
       </div>
 
       <div id="kbHomeView">
         <div class="kb-categories">
           <button class="kb-category-card" data-category="harmful">
             <span class="kb-icon">⚠️</span>
-            <h3>Harmful Medicines</h3>
-            <p>Important warnings about unsafe medicine use for children.</p>
+            <h3>${t("kb_category_harmful")}</h3>
+            <p>${t("harmful_desc")}</p>
           </button>
 
           <button class="kb-category-card" data-category="immunity">
             <span class="kb-icon">🛡️</span>
-            <h3>Immunity Tips</h3>
-            <p>Simple ways to support your child’s immunity and daily health.</p>
+            <h3>${t("kb_category_immunity")}</h3>
+            <p>${t("immunity_desc")}</p>
           </button>
 
           <button class="kb-category-card" data-category="vaccines">
             <span class="kb-icon">💉</span>
-            <h3>Vaccines Info</h3>
-            <p>Basic vaccine education and guidance for parents.</p>
+            <h3>${t("kb_category_vaccines")}</h3>
+            <p>${t("vaccines_desc")}</p>
           </button>
 
           <button class="kb-category-card" data-category="herbal">
             <span class="kb-icon">🌿</span>
-            <h3>Natural Herbal Beverages</h3>
-            <p>Safe and beneficial herbal drinks for children's health.</p>
+            <h3>${t("kb_category_herbal")}</h3>
+            <p>${t("herbal_desc")}</p>
           </button>
 
           <button class="kb-category-card" data-category="nutrition">
             <span class="kb-icon">🥗</span>
-            <h3>Child Nutrition Tips</h3>
-            <p>Practical nutrition advice for healthy child development.</p>
+            <h3>${t("kb_category_nutrition")}</h3>
+            <p>${t("nutrition_desc")}</p>
           </button>
 
           <button class="kb-category-card" data-category="sleep">
             <span class="kb-icon">😴</span>
-            <h3>Sleep & Development</h3>
-            <p>Understanding sleep patterns and their role in child growth.</p>
+            <h3>${t("kb_category_sleep")}</h3>
+            <p>${t("sleep_desc")}</p>
           </button>
         </div>
       </div>
 
       <div id="kbListView" class="hidden">
         <div class="kb-topbar">
-          <button id="kbBackToHome" class="kb-back-btn">← Back</button>
+          <button id="kbBackToHome" class="kb-back-btn">← ${t("back")}</button>
           <h3 id="kbCategoryTitle"></h3>
         </div>
         <div id="kbArticlesList" class="kb-articles-list"></div>
@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       <div id="kbDetailView" class="hidden">
         <div class="kb-topbar">
-          <button id="kbBackToList" class="kb-back-btn">← Back</button>
+          <button id="kbBackToList" class="kb-back-btn">← ${t("back")}</button>
         </div>
 
         <article class="kb-article-detail">
