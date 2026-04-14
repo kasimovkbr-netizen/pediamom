@@ -1,6 +1,7 @@
 // pregnancy.module.js — Full Period Tracker
 import { supabase } from "./supabase.js";
 import { toast } from "./toast.js";
+import { t } from "./i18n.js";
 
 /* ══════════════════════════════════════════════
    CALCULATION HELPERS
