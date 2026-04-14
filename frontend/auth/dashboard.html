@@ -150,6 +150,7 @@
         window.location.hostname === "127.0.0.1"
           ? "http://localhost:3001"
           : "https://pediamom-production.up.railway.app";
+      window.__GEMINI_KEY__ = "AIzaSyDwz_TOpjWFzk9n9MBbuze5JoBeUbf6Btc";
       // Restore dark mode immediately to prevent flash
       if (localStorage.getItem("pediamom_darkmode") === "1") {
         document.body.dataset.theme = "dark";
