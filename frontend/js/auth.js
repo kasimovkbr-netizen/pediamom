@@ -183,9 +183,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const email = document.getElementById("resetEmail").value;
       const resetMessage = document.getElementById("resetMessage");
       try {
-        const redirectTo =
-          window.location.origin +
-          window.location.pathname.replace("login.html", "dashboard.html");
+        // Use current page URL as redirect base — works for any hosting
+        const currentPath = window.location.href;
+        const redirectTo = currentPath.replace("login.html", "dashboard.html");
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo,
         });

@@ -16,12 +16,162 @@ function initNavCards() {
         return;
       }
 
+      // Pregnancy Calendar
+      if (targetPage === "pregnancy_calendar") {
+        showPregnancyCalendar();
+        return;
+      }
+
       const menuItem = document.querySelector(
         `.menu-item[data-page="${targetPage}"]`,
       );
       if (menuItem) menuItem.click();
     });
   });
+}
+
+/* ── Pregnancy Calendar ───────────────────────────────────────────────────── */
+async function showPregnancyCalendar() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) return;
+  const userId = session.user.id;
+
+  document.getElementById("mhPregnancySection")?.remove();
+
+  const section = document.createElement("div");
+  section.id = "mhPregnancySection";
+  section.className = "mh-cards-grid";
+  section.style.marginTop = "16px";
+
+  section.innerHTML = `
+    <div class="mh-card" style="grid-column:1/-1;">
+      <h3>🤰 Pregnancy Calendar</h3>
+      <p style="font-size:13px;color:#64748b;margin:0 0 16px;">Enter your last menstrual period (LMP) date to calculate your pregnancy timeline.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px;">
+        <div>
+          <label style="font-size:12px;color:#64748b;display:block;margin-bottom:4px;">Last Menstrual Period (LMP)</label>
+          <input type="date" id="pregLmpDate" style="padding:10px 12px;border-radius:10px;border:1px solid #e2e8f0;font-size:14px;" />
+        </div>
+        <button id="calcPregBtn" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:600;cursor:pointer;">Calculate</button>
+      </div>
+      <div id="pregCalendarResult"></div>
+    </div>
+  `;
+
+  const navCards = document.querySelector(".mh-nav-cards");
+  navCards?.insertAdjacentElement("afterend", section);
+
+  document.getElementById("calcPregBtn")?.addEventListener("click", () => {
+    const lmpVal = document.getElementById("pregLmpDate")?.value;
+    if (!lmpVal) return;
+    renderPregnancyCalendar(lmpVal);
+  });
+
+  // Load saved LMP from DB
+  const { data } = await supabase
+    .from("mother_health")
+    .select("last_period_date")
+    .eq("user_id", userId)
+    .single();
+
+  if (data?.last_period_date) {
+    const lmpInput = document.getElementById("pregLmpDate");
+    if (lmpInput) {
+      lmpInput.value = data.last_period_date;
+      renderPregnancyCalendar(data.last_period_date);
+    }
+  }
+}
+
+function renderPregnancyCalendar(lmpDate) {
+  const el = document.getElementById("pregCalendarResult");
+  if (!el) return;
+
+  const lmp = new Date(lmpDate);
+  const today = new Date();
+  const daysPregnant = Math.floor((today - lmp) / 86400000);
+  const weeksPregnant = Math.floor(daysPregnant / 7);
+  const daysExtra = daysPregnant % 7;
+
+  // Due date = LMP + 280 days
+  const dueDate = new Date(lmp);
+  dueDate.setDate(dueDate.getDate() + 280);
+
+  const daysLeft = Math.floor((dueDate - today) / 86400000);
+  const trimester = weeksPregnant < 13 ? 1 : weeksPregnant < 27 ? 2 : 3;
+  const progress = Math.min(100, Math.round((daysPregnant / 280) * 100));
+
+  const milestones = [
+    { week: 4, label: "Implantation complete" },
+    { week: 8, label: "Heartbeat detectable" },
+    { week: 12, label: "End of 1st trimester" },
+    { week: 16, label: "Gender may be visible" },
+    { week: 20, label: "Halfway point 🎉" },
+    { week: 24, label: "Viability milestone" },
+    { week: 28, label: "End of 2nd trimester" },
+    { week: 32, label: "Baby gains weight rapidly" },
+    { week: 36, label: "Baby considered full-term soon" },
+    { week: 40, label: "Due date 🍼" },
+  ];
+
+  const nextMilestone = milestones.find((m) => m.week > weeksPregnant);
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+      <div style="background:#eff6ff;border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:28px;font-weight:700;color:#2563eb;">${weeksPregnant}</div>
+        <div style="font-size:13px;color:#64748b;">weeks ${daysExtra} days</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Pregnant</div>
+      </div>
+      <div style="background:#f0fdf4;border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:28px;font-weight:700;color:#16a34a;">${trimester}</div>
+        <div style="font-size:13px;color:#64748b;">Trimester</div>
+      </div>
+      <div style="background:#fef9c3;border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:#ca8a04;">${dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+        <div style="font-size:13px;color:#64748b;">Due Date</div>
+        <div style="font-size:12px;color:#94a3b8;">${daysLeft > 0 ? daysLeft + " days left" : "Past due date"}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#64748b;margin-bottom:6px;">
+        <span>Progress</span><span>${progress}%</span>
+      </div>
+      <div style="background:#e2e8f0;border-radius:99px;height:10px;overflow:hidden;">
+        <div style="background:linear-gradient(90deg,#2563eb,#7c3aed);height:100%;width:${progress}%;border-radius:99px;transition:width 0.5s;"></div>
+      </div>
+    </div>
+
+    ${
+      nextMilestone
+        ? `
+    <div style="background:#f5f3ff;border-radius:12px;padding:14px;margin-bottom:20px;">
+      <div style="font-size:12px;color:#7c3aed;font-weight:600;margin-bottom:4px;">NEXT MILESTONE</div>
+      <div style="font-size:14px;color:#1e293b;">Week ${nextMilestone.week}: ${nextMilestone.label}</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:2px;">${nextMilestone.week - weeksPregnant} weeks away</div>
+    </div>`
+        : ""
+    }
+
+    <div>
+      <div style="font-size:13px;font-weight:600;color:#1e293b;margin-bottom:10px;">📅 Pregnancy Timeline</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${milestones
+          .map(
+            (m) => `
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:${m.week <= weeksPregnant ? "#f0fdf4" : "#f8fafc"};">
+            <span style="font-size:16px;">${m.week <= weeksPregnant ? "✅" : "⏳"}</span>
+            <span style="font-size:13px;color:${m.week <= weeksPregnant ? "#166534" : "#64748b"};">Week ${m.week}: ${m.label}</span>
+          </div>
+        `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
 }
 
 /* ── Mother Supplements ───────────────────────────────────────────────────── */

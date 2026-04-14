@@ -597,11 +597,16 @@ async function loadMedHistList(childId) {
   const el = document.getElementById("medHistList");
   if (!el) return;
 
-  const { data: medicines } = await supabase
+  const { data: medicines, error } = await supabase
     .from("medicine_list")
-    .select("id, name, dosage, times_per_day, active, created_at")
+    .select("id, name, dosage, times_per_day, created_at")
     .eq("child_id", childId)
     .order("created_at", { ascending: false });
+
+  if (error) {
+    el.innerHTML = `<div class="adm-empty" style="color:#ef4444;">Error: ${error.message}</div>`;
+    return;
+  }
 
   if (!medicines?.length) {
     el.innerHTML = `<div class="adm-empty">No medicines found for this child. Add medicines in the Medicines section.</div>`;
@@ -609,14 +614,13 @@ async function loadMedHistList(childId) {
   }
 
   el.innerHTML = `<div class="adm-table-wrap"><table class="adm-table">
-    <thead><tr><th>Medicine</th><th>Dosage</th><th>Times/day</th><th>Status</th><th>Added</th></tr></thead>
+    <thead><tr><th>Medicine</th><th>Dosage</th><th>Times/day</th><th>Added</th></tr></thead>
     <tbody>${medicines
       .map(
         (r) => `<tr>
       <td><strong>${r.name}</strong></td>
       <td>${r.dosage || "—"}</td>
       <td>${r.times_per_day || 1}x/day</td>
-      <td><span class="adm-badge ${r.active ? "green" : "gray"}">${r.active ? "Active" : "Stopped"}</span></td>
       <td>${new Date(r.created_at).toLocaleDateString("en-US")}</td>
     </tr>`,
       )

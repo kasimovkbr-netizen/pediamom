@@ -303,6 +303,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       <span class="mh-icon">💊</span>
       <h3>${t("my_supplements")}</h3>
     </div>
+    <div class="mh-nav-card" data-page="pregnancy_calendar">
+      <span class="mh-icon">🤰</span>
+      <h3>Pregnancy Calendar</h3>
+    </div>
   </div>
   <div class="mh-cards-grid">
     <div class="mh-card" id="waterIntakeCard">
