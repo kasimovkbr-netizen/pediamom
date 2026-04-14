@@ -1,5 +1,5 @@
 import { supabase } from "./supabase.js";
-import { t } from "./i18n.js";
+import { t, getLang } from "./i18n.js";
 
 let currentCategory = "";
 let currentArticles = [];
@@ -87,7 +87,9 @@ async function loadArticlesByCategory(category) {
   try {
     const { data, error } = await supabase
       .from("knowledge_base")
-      .select("*")
+      .select(
+        "id, title, title_uz, summary, summary_uz, content, content_uz, warning, category",
+      )
       .eq("category", category);
 
     if (error) throw error;
@@ -135,14 +137,18 @@ function subscribeToKnowledgeBase(category) {
     .subscribe();
 }
 
+function locField(article, field) {
+  const lang = getLang();
+  if (lang === "uz" && article[`${field}_uz`]) return article[`${field}_uz`];
+  return article[field] || "";
+}
+
 function renderArticlesList() {
   const listContainer = document.getElementById("kbArticlesList");
   if (!listContainer) return;
 
   if (currentArticles.length === 0) {
-    listContainer.innerHTML = `
-      <p class="kb-empty">No articles found in this category yet.</p>
-    `;
+    listContainer.innerHTML = `<p class="kb-empty">${t("no_articles")}</p>`;
     return;
   }
 
@@ -150,8 +156,8 @@ function renderArticlesList() {
     .map(
       (article) => `
     <button class="kb-article-card" data-id="${article.id}" type="button">
-      <h4>${escapeHtml(article.title)}</h4>
-      <p>${escapeHtml(article.summary || "")}</p>
+      <h4>${escapeHtml(locField(article, "title"))}</h4>
+      <p>${escapeHtml(locField(article, "summary"))}</p>
     </button>
   `,
     )
@@ -166,8 +172,8 @@ async function renderArticleDetail(article) {
 
   if (!title || !summary || !warning || !content) return;
 
-  title.textContent = article.title || "";
-  summary.textContent = article.summary || "";
+  title.textContent = locField(article, "title");
+  summary.textContent = locField(article, "summary");
 
   if (article.warning) {
     warning.textContent = article.warning;
@@ -177,31 +183,26 @@ async function renderArticleDetail(article) {
     warning.classList.add("hidden");
   }
 
-  // Bookmark button qo'shamiz
   let bookmarkBtn = document.getElementById("kbBookmarkBtn");
-
   if (!bookmarkBtn) {
     bookmarkBtn = document.createElement("button");
     bookmarkBtn.id = "kbBookmarkBtn";
     bookmarkBtn.className = "kb-bookmark-btn";
-
-    // title elementdan keyin qo'shamiz
     title.insertAdjacentElement("afterend", bookmarkBtn);
   }
 
-  // Avval bookmark qilinganmi tekshiramiz
   const existingBookmarkId = await isBookmarked(article.id);
-
   bookmarkBtn.textContent = existingBookmarkId
-    ? "⭐ Remove Bookmark"
-    : "⭐ Save Article";
-
+    ? `⭐ ${t("remove_bookmark")}`
+    : `⭐ ${t("save_article")}`;
   bookmarkBtn.onclick = async () => {
     const saved = await toggleBookmark(article.id);
-    bookmarkBtn.textContent = saved ? "⭐ Remove Bookmark" : "⭐ Save Article";
+    bookmarkBtn.textContent = saved
+      ? `⭐ ${t("remove_bookmark")}`
+      : `⭐ ${t("save_article")}`;
   };
 
-  content.innerHTML = formatContent(article.content || "");
+  content.innerHTML = formatContent(locField(article, "content"));
   showDetailView();
 }
 

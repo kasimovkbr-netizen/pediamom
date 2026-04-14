@@ -1,5 +1,5 @@
 import { supabase } from "./supabase.js";
-import { t } from "./i18n.js";
+import { t, getLang } from "./i18n.js";
 
 let savedArticles = [];
 
@@ -19,7 +19,7 @@ export async function initSavedArticlesModule() {
   const { data, error } = await supabase
     .from("saved_articles")
     .select(
-      "id, article_id, knowledge_base(id, title, summary, category, content)",
+      "id, article_id, knowledge_base(id, title, title_uz, summary, summary_uz, content, content_uz, category)",
     )
     .eq("user_id", userId);
 
@@ -36,6 +36,13 @@ export async function initSavedArticlesModule() {
   }));
 
   renderSavedArticles(savedArticles);
+}
+
+// Helper: get localized field
+function loc(article, field) {
+  const lang = getLang();
+  if (lang === "uz" && article[`${field}_uz`]) return article[`${field}_uz`];
+  return article[field] || "";
 }
 
 export function renderSavedArticles(articles) {
@@ -55,11 +62,11 @@ export function renderSavedArticles(articles) {
     .map(
       (article) => `
     <div class="saved-article-card" data-id="${article.id}">
-      <h3>${article.title || ""}</h3>
-      <p class="card-summary">${article.summary || ""}</p>
+      <h3>${escapeHtml(loc(article, "title"))}</h3>
+      <p class="card-summary">${escapeHtml(loc(article, "summary"))}</p>
       <div class="card-footer">
-        <span class="article-badge ${getCategoryBadgeClass(article.category)}">${article.category || ""}</span>
-        <button class="read-article-btn" data-id="${article.id}">${t("read") !== "read" ? t("read") : "Read"} →</button>
+        <span class="article-badge ${getCategoryBadgeClass(article.category)}">${t("kb_category_" + article.category) || article.category || ""}</span>
+        <button class="read-article-btn" data-id="${article.id}">${t("read")} →</button>
       </div>
     </div>
   `,
@@ -120,12 +127,36 @@ function openArticleDetail(article) {
   if (existing) existing.remove();
 
   const categoryColors = {
-    harmful: { bg: "#fef2f2", color: "#b91c1c", label: "⚠️ Harmful" },
-    immunity: { bg: "#f0fdf4", color: "#166534", label: "🛡️ Immunity" },
-    vaccines: { bg: "#eff6ff", color: "#1d4ed8", label: "💉 Vaccines" },
-    herbal: { bg: "#f0fdf4", color: "#15803d", label: "🌿 Herbal" },
-    nutrition: { bg: "#fefce8", color: "#854d0e", label: "🥗 Nutrition" },
-    sleep: { bg: "#f5f3ff", color: "#6d28d9", label: "😴 Sleep" },
+    harmful: {
+      bg: "#fef2f2",
+      color: "#b91c1c",
+      label: `⚠️ ${t("kb_category_harmful")}`,
+    },
+    immunity: {
+      bg: "#f0fdf4",
+      color: "#166534",
+      label: `🛡️ ${t("kb_category_immunity")}`,
+    },
+    vaccines: {
+      bg: "#eff6ff",
+      color: "#1d4ed8",
+      label: `💉 ${t("kb_category_vaccines")}`,
+    },
+    herbal: {
+      bg: "#f0fdf4",
+      color: "#15803d",
+      label: `🌿 ${t("kb_category_herbal")}`,
+    },
+    nutrition: {
+      bg: "#fefce8",
+      color: "#854d0e",
+      label: `🥗 ${t("kb_category_nutrition")}`,
+    },
+    sleep: {
+      bg: "#f5f3ff",
+      color: "#6d28d9",
+      label: `😴 ${t("kb_category_sleep")}`,
+    },
   };
   const cat = categoryColors[article.category] || {
     bg: "#f8fafc",
@@ -133,7 +164,11 @@ function openArticleDetail(article) {
     label: article.category || "",
   };
 
-  const contentHtml = (article.content || "")
+  const displayTitle = loc(article, "title");
+  const displaySummary = loc(article, "summary");
+  const displayContent = loc(article, "content");
+
+  const contentHtml = (displayContent || "")
     .split("\n")
     .filter(Boolean)
     .map(
@@ -170,8 +205,8 @@ function openArticleDetail(article) {
             color:#64748b;transition:background 0.2s;
           ">✕</button>
         </div>
-        <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 8px;">${escapeHtml(article.title || "")}</h2>
-        <p style="font-size:14px;color:#64748b;margin:0;font-style:italic;">${escapeHtml(article.summary || "")}</p>
+        <h2 style="font-size:20px;font-weight:700;color:#0f172a;margin:0 0 8px;">${escapeHtml(displayTitle)}</h2>
+        <p style="font-size:14px;color:#64748b;margin:0;font-style:italic;">${escapeHtml(displaySummary)}</p>
       </div>
       <!-- Content -->
       <div style="padding:20px 24px;overflow-y:auto;flex:1;">
