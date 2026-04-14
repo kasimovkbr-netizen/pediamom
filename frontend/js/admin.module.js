@@ -104,7 +104,7 @@ async function loadDashboardStats() {
   if (!content) return;
 
   const [
-    { count: usersCount },
+    { count: usersCount, error: usersError },
     { count: articlesCount },
     { data: recentUsers },
   ] = await Promise.all([
@@ -116,6 +116,10 @@ async function loadDashboardStats() {
       .order("created_at", { ascending: false })
       .limit(5),
   ]);
+
+  if (usersError) {
+    console.error("[admin] dashboard stats error:", usersError.message);
+  }
 
   content.innerHTML = `
     <div class="adm-stats-grid">
@@ -162,12 +166,21 @@ async function loadDashboardStats() {
 async function loadUsers() {
   const content = document.getElementById("adm-content");
 
-  const { data: users } = await supabase
+  const { data: users, error } = await supabase
     .from("users")
     .select(
       "id, email, display_name, role, credits, telegram_chat_id, created_at",
     )
     .order("created_at", { ascending: false });
+
+  if (error) {
+    content.innerHTML = `<div class="adm-empty" style="color:#ef4444;">
+      ❌ Error loading users: ${error.message}<br>
+      <small style="color:#94a3b8;">This may be a Row Level Security (RLS) issue. Please disable RLS on the users table in Supabase or add a policy for admins.</small>
+    </div>`;
+    console.error("[admin] loadUsers error:", error);
+    return;
+  }
 
   allUsers = users || [];
 
