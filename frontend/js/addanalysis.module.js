@@ -337,14 +337,7 @@ async function runAIAnalysis(analysisId, type, data) {
       if (result.error?.code === "insufficient_credits") {
         block.innerHTML = `<div class="ai-error-box">❌ Insufficient credits. Required: <b>${result.error.creditsNeeded}</b>, available: <b>${result.error.creditsAvailable ?? 0}</b>. <a href="#" onclick="document.querySelector('[data-page=billing]')?.click();return false;">Buy credits →</a></div>`;
       } else if (result.error?.message?.includes("quota")) {
-        // Fallback to direct Gemini API
-        const geminiReply = await runGeminiFallback(type, data);
-        if (geminiReply) {
-          renderAISummary(block, geminiReply);
-          btn.textContent = "🔄 Re-analyze";
-        } else {
-          block.innerHTML = `<div class="ai-error-box">❌ AI service quota exceeded. Please try again later.</div>`;
-        }
+        block.innerHTML = `<div class="ai-error-box">❌ AI service quota exceeded. Please try again later.</div>`;
       } else {
         block.innerHTML = `<div class="ai-error-box">❌ ${result.error?.message || "AI analysis failed"}</div>`;
       }
@@ -362,58 +355,6 @@ async function runAIAnalysis(analysisId, type, data) {
   } finally {
     btn.disabled = false;
   }
-}
-
-async function runGeminiFallback(type, data) {
-  const apiKey =
-    window.__GEMINI_KEY__ || "AIzaSyBmYxayD0Df8QepFW0VVs-R_ygL7QD6Z5o";
-  const valuesText = Object.entries(data || {})
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(", ");
-  const prompt = `You are a pediatric health AI. Analyze this ${type} test result for a child: ${valuesText}. Provide a brief interpretation and 2-3 recommendations in English. Respond in JSON format: {"interpretation": "...", "recommendations": ["...", "..."]}`;
-
-  const models = [
-    "gemini-2.5-flash-preview-04-17",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
-  ];
-
-  for (const model of models) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 512 },
-          }),
-          signal: AbortSignal.timeout(20000),
-        },
-      );
-      if (!res.ok) continue;
-      const json = await res.json();
-      if (json.error?.code === 429 || json.error?.code === 404) continue;
-      const text = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      if (!text) continue;
-      const match = text.match(/\{[\s\S]*\}/);
-      if (match) {
-        const parsed = JSON.parse(match[0]);
-        return {
-          interpretation: parsed.interpretation,
-          recommendations: parsed.recommendations,
-          creditsUsed: 0,
-        };
-      }
-      return { interpretation: text, recommendations: [], creditsUsed: 0 };
-    } catch {
-      continue;
-    }
-  }
-  return null;
 }
 
 function renderAISummary(block, result) {

@@ -598,16 +598,10 @@ async function sendChatMessage() {
       // Backend unavailable — fallback to direct Gemini
     }
 
-    // Fallback: direct Gemini API call
+    // Fallback: backend unavailable
     if (!reply) {
-      const geminiKey =
-        window.__GEMINI_KEY__ || "AIzaSyBmYxayD0Df8QepFW0VVs-R_ygL7QD6Z5o";
-      if (geminiKey) {
-        reply = await callGeminiFrontend(message, chatHistory, geminiKey);
-      } else {
-        reply =
-          "⚠️ AI service is temporarily unavailable. The backend server is not running. Please try again later or contact support.";
-      }
+      reply =
+        "⚠️ AI service is temporarily unavailable. Please try again later.";
     }
 
     chatHistory.push({ role: "user", content: message });
@@ -626,53 +620,6 @@ async function sendChatMessage() {
     }
     scrollChatToBottom();
   }
-}
-
-async function callGeminiFrontend(message, history, apiKey) {
-  const systemPrompt =
-    "You are PediaMom AI Health Assistant. Help parents with questions about child health, vaccination, medicines, menstrual cycle, pregnancy, and breastfeeding. Be concise, friendly, and medically accurate. Always recommend consulting a doctor for serious concerns.";
-
-  const contents = [
-    ...history.slice(-6).map((h) => ({
-      role: h.role === "assistant" ? "model" : "user",
-      parts: [{ text: h.content }],
-    })),
-    { role: "user", parts: [{ text: message }] },
-  ];
-
-  const models = [
-    "gemini-2.5-flash-preview-04-17",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
-  ];
-
-  for (const model of models) {
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents,
-            generationConfig: { maxOutputTokens: 512, temperature: 0.7 },
-          }),
-          signal: AbortSignal.timeout(20000),
-        },
-      );
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (data.error?.code === 429 || data.error?.code === 404) continue;
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) return text;
-    } catch (_) {
-      continue;
-    }
-  }
-  return "⚠️ AI service is temporarily unavailable. Please try again later.";
 }
 
 function appendChatMessage(role, text) {
