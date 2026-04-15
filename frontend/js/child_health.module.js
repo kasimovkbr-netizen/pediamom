@@ -98,13 +98,13 @@ async function loadTab(tab) {
       await renderDoctorVisits(content);
       break;
     case "dental":
-      await renderDental(content);
+      await renderDental(content, selectedChildId, userId, children);
       break;
     case "eye":
-      await renderEye(content);
+      await renderEye(content, selectedChildId, userId, children);
       break;
     case "hearing":
-      await renderHearing(content);
+      await renderHearing(content, selectedChildId, userId, children);
       break;
     case "medhistory":
       await renderMedHistory(content, selectedChildId, userId);
@@ -184,7 +184,7 @@ async function loadGrowthList() {
       <td>${r.height_cm ? r.height_cm + " cm" : "—"}</td>
       <td>${r.head_cm ? r.head_cm + " cm" : "—"}</td>
       <td>${r.notes || "—"}</td>
-      <td><button class="adm-btn-sm red" onclick="window.__chDel('child_growth','${r.id}','growthList',loadGrowthList)">🗑</button></td>
+      <td><button class="adm-btn-sm red" onclick="window.__chDelReload('child_growth','${r.id}','growthList')">🗑</button></td>
     </tr>`,
       )
       .join("")}</tbody>

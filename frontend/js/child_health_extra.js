@@ -240,13 +240,9 @@ async function loadDiaperList(childId) {
 }
 
 // ─── DENTAL ───────────────────────────────────────────────────────────────────
-export async function renderDental(el, childId, userId) {
-  // Get children list for select
-  const { data: kids } = await supabase
-    .from("children")
-    .select("id, name")
-    .eq("parent_id", userId);
-  const childOpts = `<option value="">— Select child —</option>${(kids || []).map((c) => `<option value="${c.id}" ${c.id === childId ? "selected" : ""}>${c.name}</option>`).join("")}`;
+export async function renderDental(el, childId, userId, children) {
+  const effectiveChildId = childId || (children?.[0]?.id ?? null);
+  const childOpts = `<option value="">— Select child —</option>${(children || []).map((c) => `<option value="${c.id}" ${c.id === effectiveChildId ? "selected" : ""}>${c.name}</option>`).join("")}`;
 
   el.innerHTML = `
     <div class="adm-section">
@@ -266,7 +262,7 @@ export async function renderDental(el, childId, userId) {
     </div>
   `;
 
-  let activeChildId = childId;
+  let activeChildId = effectiveChildId;
 
   document
     .getElementById("dentalChildSel")
@@ -334,12 +330,9 @@ async function loadDentalList(childId) {
 }
 
 // ─── EYE ──────────────────────────────────────────────────────────────────────
-export async function renderEye(el, childId, userId) {
-  const { data: kids } = await supabase
-    .from("children")
-    .select("id, name")
-    .eq("parent_id", userId);
-  const childOpts = `<option value="">— Select child —</option>${(kids || []).map((c) => `<option value="${c.id}" ${c.id === childId ? "selected" : ""}>${c.name}</option>`).join("")}`;
+export async function renderEye(el, childId, userId, children) {
+  const effectiveChildId = childId || (children?.[0]?.id ?? null);
+  const childOpts = `<option value="">— Select child —</option>${(children || []).map((c) => `<option value="${c.id}" ${c.id === effectiveChildId ? "selected" : ""}>${c.name}</option>`).join("")}`;
 
   el.innerHTML = `
     <div class="adm-section">
@@ -362,7 +355,7 @@ export async function renderEye(el, childId, userId) {
     </div>
   `;
 
-  let activeChildId = childId;
+  let activeChildId = effectiveChildId;
 
   document
     .getElementById("eyeChildSel")
@@ -429,12 +422,9 @@ async function loadEyeList(childId) {
 }
 
 // ─── HEARING ──────────────────────────────────────────────────────────────────
-export async function renderHearing(el, childId, userId) {
-  const { data: kids } = await supabase
-    .from("children")
-    .select("id, name")
-    .eq("parent_id", userId);
-  const childOpts = `<option value="">— Select child —</option>${(kids || []).map((c) => `<option value="${c.id}" ${c.id === childId ? "selected" : ""}>${c.name}</option>`).join("")}`;
+export async function renderHearing(el, childId, userId, children) {
+  const effectiveChildId = childId || (children?.[0]?.id ?? null);
+  const childOpts = `<option value="">— Select child —</option>${(children || []).map((c) => `<option value="${c.id}" ${c.id === effectiveChildId ? "selected" : ""}>${c.name}</option>`).join("")}`;
 
   el.innerHTML = `
     <div class="adm-section">
@@ -459,7 +449,7 @@ export async function renderHearing(el, childId, userId) {
     </div>
   `;
 
-  let activeChildId = childId;
+  let activeChildId = effectiveChildId;
 
   document
     .getElementById("hearingChildSel")
