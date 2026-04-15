@@ -641,11 +641,11 @@ async function callGeminiFrontend(message, history, apiKey) {
   ];
 
   const models = [
+    "gemini-2.5-flash-preview-04-17",
     "gemini-2.0-flash",
     "gemini-2.0-flash-lite",
-    "gemini-1.5-flash-8b",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
   ];
 
   for (const model of models) {
@@ -665,7 +665,7 @@ async function callGeminiFrontend(message, history, apiKey) {
       );
       if (!res.ok) continue;
       const data = await res.json();
-      if (data.error?.code === 429) continue;
+      if (data.error?.code === 429 || data.error?.code === 404) continue;
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) return text;
     } catch (_) {

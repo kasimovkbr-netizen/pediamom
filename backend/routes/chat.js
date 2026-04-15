@@ -38,10 +38,11 @@ async function callGemini(messages) {
   if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
 
   const models = [
+    "gemini-2.5-flash-preview-04-17",
     "gemini-2.0-flash",
     "gemini-2.0-flash-lite",
-    "gemini-1.5-flash-8b",
-    "gemini-1.5-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
   ];
 
   // Convert chat history to Gemini format
@@ -85,9 +86,13 @@ Rules:
       const json = await res.json();
       if (
         json.error?.code === 429 ||
-        json.error?.status === "RESOURCE_EXHAUSTED"
+        json.error?.code === 404 ||
+        json.error?.status === "RESOURCE_EXHAUSTED" ||
+        json.error?.status === "NOT_FOUND"
       ) {
-        lastError = new Error(`${model} quota exceeded`);
+        lastError = new Error(
+          `${model}: ${json.error?.message || json.error?.code}`,
+        );
         continue;
       }
       if (!res.ok) {
@@ -163,12 +168,10 @@ router.post("/chat/health", async (req, res) => {
     });
   } catch (err) {
     console.error("[chat] error:", err.message);
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: { code: "chat_failed", message: err.message },
-      });
+    res.status(500).json({
+      success: false,
+      error: { code: "chat_failed", message: err.message },
+    });
   }
 });
 

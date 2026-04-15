@@ -373,11 +373,11 @@ async function runGeminiFallback(type, data) {
   const prompt = `You are a pediatric health AI. Analyze this ${type} test result for a child: ${valuesText}. Provide a brief interpretation and 2-3 recommendations in English. Respond in JSON format: {"interpretation": "...", "recommendations": ["...", "..."]}`;
 
   const models = [
+    "gemini-2.5-flash-preview-04-17",
     "gemini-2.0-flash",
     "gemini-2.0-flash-lite",
-    "gemini-1.5-flash-8b",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
   ];
 
   for (const model of models) {
@@ -396,7 +396,7 @@ async function runGeminiFallback(type, data) {
       );
       if (!res.ok) continue;
       const json = await res.json();
-      if (json.error?.code === 429) continue;
+      if (json.error?.code === 429 || json.error?.code === 404) continue;
       const text = json.candidates?.[0]?.content?.parts?.[0]?.text || "";
       if (!text) continue;
       const match = text.match(/\{[\s\S]*\}/);

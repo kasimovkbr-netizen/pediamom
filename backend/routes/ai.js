@@ -61,11 +61,11 @@ async function callGemini(prompt) {
 
   // Try models in order — fallback on quota exceeded
   const models = [
+    "gemini-2.5-flash-preview-04-17",
     "gemini-2.0-flash",
     "gemini-2.0-flash-lite",
-    "gemini-1.5-flash-8b",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
   ];
 
   let lastError = null;
@@ -88,13 +88,19 @@ async function callGemini(prompt) {
 
       const json = await res.json();
 
-      // Quota exceeded — try next model
+      // Quota exceeded or model not found — try next model
       if (
         json.error?.code === 429 ||
-        json.error?.status === "RESOURCE_EXHAUSTED"
+        json.error?.code === 404 ||
+        json.error?.status === "RESOURCE_EXHAUSTED" ||
+        json.error?.status === "NOT_FOUND"
       ) {
-        console.warn(`[AI] ${model} quota exceeded, trying next...`);
-        lastError = new Error(`${model} quota exceeded`);
+        console.warn(
+          `[AI] ${model} failed (${json.error?.code}), trying next...`,
+        );
+        lastError = new Error(
+          `${model}: ${json.error?.message || json.error?.code}`,
+        );
         continue;
       }
 
